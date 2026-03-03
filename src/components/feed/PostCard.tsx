@@ -18,6 +18,7 @@ import CommentSection from "./CommentSection";
 import MimoModal from "@/components/MimoModal";
 import VideoPost from "./VideoPost";
 import PostModerationBar from "./PostModerationBar";
+import YouTubeEmbed, { extractYouTubeId } from "./YouTubeEmbed";
 
 interface PostCardProps {
   post: Post;
@@ -137,7 +138,16 @@ const PostCard = ({ post }: PostCardProps) => {
           </div>
         </header>
 
-        {post.content && <p className="text-foreground whitespace-pre-wrap break-words mt-2">{post.content}</p>}
+        {post.content && (
+          <div className="mt-2">
+            <p className="text-foreground whitespace-pre-wrap break-words">{post.content}</p>
+            {extractYouTubeId(post.content) && (
+              <div className="mt-2">
+                <YouTubeEmbed url={post.content} />
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* MEDIA — Facebook-style: full width, large */}
@@ -177,9 +187,9 @@ const PostCard = ({ post }: PostCardProps) => {
           {user && !isOwnPost && (
             <button
               onClick={() => {
-                // Open editor modal with remix context - pass image or video
                 const mediaParam = post.image_url ? `&image=${encodeURIComponent(post.image_url)}` : post.video_url ? `&video=${encodeURIComponent(post.video_url)}` : "";
-                navigate(`/editor?remix=${post.id}${mediaParam}`);
+                const captionParam = post.content ? `&caption=${encodeURIComponent(post.content)}` : "";
+                navigate(`/editor?remix=${post.id}${mediaParam}${captionParam}`);
               }}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-secondary/50 text-secondary-foreground hover:bg-secondary/70 transition-all"
             >
