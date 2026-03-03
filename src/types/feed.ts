@@ -1,3 +1,4 @@
+// @ts-ignore - types.ts is auto-generated
 import { Database } from "@/integrations/supabase/types";
 
 export type InteractionType = Database["public"]["Enums"]["interaction_type"];
