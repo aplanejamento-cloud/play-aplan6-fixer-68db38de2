@@ -1,14 +1,17 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useGameState } from "@/hooks/useGameState";
 
 const MAX_POSTS_PER_DAY = 3;
 
 export function useJuizPostLimit() {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
+  const { gameState } = useGameState();
 
   const isJuiz = profile?.user_type === "juiz";
+  const gameOn = gameState?.game_on ?? false;
 
   const { data: postsHoje = 0, isLoading } = useQuery({
     queryKey: ["juiz-posts-hoje", user?.id],
@@ -29,12 +32,13 @@ export function useJuizPostLimit() {
     refetchInterval: 30_000,
   });
 
-  const canPost = isJuiz && postsHoje < MAX_POSTS_PER_DAY;
+  // Juiz can only post if game is ON and under daily limit
+  const canPost = isJuiz && gameOn && postsHoje < MAX_POSTS_PER_DAY;
   const remaining = Math.max(0, MAX_POSTS_PER_DAY - postsHoje);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["juiz-posts-hoje", user?.id] });
   };
 
-  return { postsHoje, canPost, remaining, isLoading, isJuiz, invalidate };
+  return { postsHoje, canPost, remaining, isLoading, isJuiz, gameOn, invalidate };
 }
