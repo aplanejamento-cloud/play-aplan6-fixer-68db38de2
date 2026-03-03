@@ -38,15 +38,23 @@ const NotificationsDropdown = () => {
 
   const handleClick = async (notification: (typeof notifications)[0]) => {
     if (!notification.lido) {
-      await markRead.mutateAsync(notification.id);
+      markRead.mutate(notification.id);
     }
     setOpen(false);
     if (notification.tipo === "mimo" && notification.chat_id) {
       navigate(`/chat/${notification.chat_id}`);
     } else if (notification.tipo === "desafio") {
-      navigate(`/desafios-juiz`);
+      navigate("/desafios-juiz");
+    } else if (notification.tipo === "follow" && notification.from_user_id) {
+      navigate(`/profile/${notification.from_user_id}`);
+    } else if (notification.tipo === "duel") {
+      navigate("/duels");
+    } else if (notification.tipo === "remix" && notification.post_id) {
+      navigate("/feed");
     } else if (notification.post_id) {
-      navigate(`/feed`);
+      navigate("/feed");
+    } else if (notification.tipo === "comment" && notification.post_id) {
+      navigate("/feed");
     }
   };
 

@@ -140,15 +140,30 @@ export function useDesafios() {
   };
 
   const aprovarDesafio = async (desafioId: string) => {
+    // Find the desafio to get its data
+    const desafio = pendentes.find((d: Desafio) => d.id === desafioId);
+    
     const { error } = await supabase
       .from("desafios")
       .update({ aprovado: true })
       .eq("id", desafioId);
 
     if (!error) {
-      toast.success("Desafio aprovado e publicado! ✅");
+      // Create a normal post from the approved desafio
+      if (desafio) {
+        await supabase.from("posts").insert({
+          user_id: desafio.juiz_id,
+          content: desafio.texto || "⚖️ Desafio aprovado!",
+          video_url: desafio.video_url || null,
+          tipo: "normal",
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        });
+      }
+
+      toast.success("Desafio aprovado e publicado como post! ✅");
       queryClient.invalidateQueries({ queryKey: ["desafios-pendentes"] });
       queryClient.invalidateQueries({ queryKey: ["desafios-aprovados"] });
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
     }
   };
 
