@@ -5,13 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
-import { Upload, Trash2, Save, Loader2, LogOut, Settings, ChevronDown, ChevronUp } from "lucide-react";
+import { Upload, Trash2, Save, Loader2, LogOut, Settings, ChevronDown, ChevronUp, LifeBuoy } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSosPendingCount } from "@/hooks/useSos";
+import { useNavigate } from "react-router-dom";
 
 const AdminHomePanel = () => {
   const { config, updateConfig, uploadHomeMedia } = useHomeConfig();
   const { signOut } = useAuth();
+  const navigate = useNavigate();
+  const { data: sosPending = 0 } = useSosPendingCount();
   const [expanded, setExpanded] = useState(false);
   const [prizeValue, setPrizeValue] = useState(config?.prize_value || "R$50.000");
   const [prizeEnabled, setPrizeEnabled] = useState(config?.prize_enabled ?? true);
@@ -105,6 +109,21 @@ const AdminHomePanel = () => {
 
       {expanded && (
         <div className="px-4 pb-4 space-y-6">
+          {/* SOS Badge */}
+          <Button
+            variant={sosPending > 0 ? "destructive" : "outline"}
+            onClick={() => navigate("/sos-ajuda")}
+            className="w-full"
+          >
+            <LifeBuoy className="h-4 w-4 mr-2" />
+            SOS Ajuda
+            {sosPending > 0 && (
+              <span className="ml-2 bg-destructive-foreground text-destructive text-xs px-2 py-0.5 rounded-full font-bold">
+                {sosPending}
+              </span>
+            )}
+          </Button>
+
           {/* Exit Admin Button */}
           <Button variant="destructive" onClick={handleExitAdmin} className="w-full">
             <LogOut className="h-4 w-4 mr-2" /> Sair do Admin
