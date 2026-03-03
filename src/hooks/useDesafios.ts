@@ -9,6 +9,7 @@ export interface Desafio {
   juiz_id: string;
   video_url: string | null;
   texto: string | null;
+  image_urls: string[] | null;
   aprovado: boolean;
   rejeitado: boolean;
   likes_pago: number;
@@ -151,13 +152,25 @@ export function useDesafios() {
     if (!error) {
       // Create a normal post from the approved desafio
       if (desafio) {
-        await supabase.from("posts").insert({
+        const mainImage = desafio.image_urls?.[0] || null;
+        const { data: newPost } = await supabase.from("posts").insert({
           user_id: desafio.juiz_id,
           content: desafio.texto || "⚖️ Desafio aprovado!",
+          image_url: mainImage,
           video_url: desafio.video_url || null,
           tipo: "normal",
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        });
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        } as any).select().single();
+
+        // Insert additional images if any
+        if (newPost && desafio.image_urls && desafio.image_urls.length > 1) {
+          const rows = desafio.image_urls.slice(1).map((url, i) => ({
+            post_id: newPost.id,
+            image_url: url,
+            position: i + 1,
+          }));
+          await supabase.from("post_images").insert(rows as any);
+        }
       }
 
       toast.success("Desafio aprovado e publicado como post! ✅");

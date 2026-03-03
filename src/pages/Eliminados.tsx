@@ -19,11 +19,16 @@ const Eliminados = () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("user_id, name, avatar_url, total_likes, user_type")
-        .eq("total_likes", 0)
+        .lte("total_likes", 0)
+        .eq("user_type", "jogador")
         .eq("is_bot", false)
         .order("name", { ascending: true });
       if (error) throw error;
-      return data || [];
+      return (data || []).map((p: any) => ({
+        ...p,
+        eliminated_at: new Date(), // approximate
+        return_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+      }));
     },
     refetchInterval: 30000,
   });
@@ -42,7 +47,8 @@ const Eliminados = () => {
             <Skull className="w-7 h-7" /> Eliminados
           </h1>
           <p className="text-sm text-muted-foreground">
-            Jogadores com 0 likes. Aguardam 3 dias para retornar ao jogo.
+            Jogadores com 0 likes ou menos. Aguardam 3 dias para retornar ao jogo.
+            <br />Juízes não são eliminados.
           </p>
         </div>
 
@@ -81,7 +87,10 @@ const Eliminados = () => {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-foreground truncate">{p.name}</p>
-                  <p className="text-xs text-destructive font-medium">💀 Eliminado · 0 likes</p>
+                  <p className="text-xs text-destructive font-medium">💀 Eliminado · {p.total_likes} likes</p>
+                  <p className="text-xs text-muted-foreground">
+                    Retorno em {Math.max(0, Math.ceil((p.return_date.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} dias
+                  </p>
                 </div>
                 <span className="text-xs text-muted-foreground capitalize">{p.user_type}</span>
               </button>

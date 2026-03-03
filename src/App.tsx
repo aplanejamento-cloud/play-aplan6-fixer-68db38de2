@@ -32,6 +32,7 @@ import AdminPixLogs from "./pages/AdminPixLogs";
 import AdminPremiumUsers from "./pages/AdminPremiumUsers";
 import AdminCulturaStats from "./pages/AdminCulturaStats";
 import Eliminados from "./pages/Eliminados";
+import SosAjuda from "./pages/SosAjuda";
 import DailyReportModal from "@/components/retention/DailyReportModal";
 import JuizDoacaoPopup from "@/components/retention/JuizDoacaoPopup";
 
@@ -102,6 +103,7 @@ const AppContent = () => {
         <Route path="/admin/pix-logs" element={<AuthProtectedRoute><AdminPixLogs /></AuthProtectedRoute>} />
         <Route path="/admin/premium-users" element={<AuthProtectedRoute><AdminPremiumUsers /></AuthProtectedRoute>} />
         <Route path="/admin/cultura-stats" element={<AuthProtectedRoute><AdminCulturaStats /></AuthProtectedRoute>} />
+        <Route path="/sos-ajuda" element={<AuthProtectedRoute><SosAjuda /></AuthProtectedRoute>} />
 
         {/* Game-state protected */}
         <Route path="/feed" element={<ProtectedRoute><Feed /></ProtectedRoute>} />

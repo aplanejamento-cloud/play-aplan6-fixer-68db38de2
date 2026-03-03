@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { useCreatePost } from "@/hooks/usePosts";
+import { useTemas } from "@/hooks/useTemas";
 import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +63,10 @@ const Editor = () => {
   const remixPostId = searchParams.get("remix");
   const remixImageUrl = searchParams.get("image");
   const remixCaption = searchParams.get("caption");
+  const multiplicadorParam = searchParams.get("multiplicador");
+
+  const { temas } = useTemas();
+  const activeTema = multiplicadorParam ? temas.find(t => t.titulo.toLowerCase().replace(/\s+/g, '') === multiplicadorParam.toLowerCase()) : null;
 
   const [image, setImage] = useState<string | null>(remixImageUrl || null);
   const [originalFile, setOriginalFile] = useState<File | null>(null);
@@ -231,6 +236,16 @@ const Editor = () => {
     <div className="min-h-screen bg-background">
       <AppHeader />
       <main className="container mx-auto px-4 py-6 max-w-2xl space-y-4">
+        {activeTema && (
+          <div className="p-3 rounded-xl bg-primary/10 border border-primary/30 text-center">
+            <p className="text-sm font-cinzel text-primary">🎨 Tema Ativo: {activeTema.titulo}</p>
+            <p className="text-xs text-muted-foreground">Multiplicador: {activeTema.fator}x likes</p>
+            {activeTema.midia_url && (
+              <img src={activeTema.midia_url} alt={activeTema.titulo} className="w-full max-h-32 object-cover rounded-lg mt-2" />
+            )}
+          </div>
+        )}
+
         <h1 className="font-cinzel text-2xl text-center text-foreground">
           Editor <span className="text-primary">PlayLike</span> ✨
         </h1>
