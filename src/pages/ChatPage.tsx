@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Send, ArrowLeft, MessageSquare, Clock, Paperclip } from "lucide-react";
+import { Loader2, Send, ArrowLeft, MessageSquare, Clock, Paperclip, Download } from "lucide-react";
 import { formatDistanceToNow, format, isPast } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -138,8 +138,37 @@ const ChatPage = () => {
               )}
             </div>
           </div>
-          <div className="text-xs text-muted-foreground shrink-0">
-            💛 {chat.likes_enviados.toLocaleString("pt-BR")} mimo
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs text-muted-foreground">
+              💛 {chat.likes_enviados.toLocaleString("pt-BR")} mimo
+            </span>
+            {messages.some(m => m.media_url) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                title="Baixar todos os arquivos"
+                onClick={() => {
+                  const mediaMessages = messages.filter(m => m.media_url);
+                  if (mediaMessages.length === 0) { toast.info("Nenhum arquivo neste chat"); return; }
+                  mediaMessages.forEach((m, i) => {
+                    setTimeout(() => {
+                      const a = document.createElement("a");
+                      a.href = m.media_url!;
+                      a.download = `chat-${chatId}-file-${i + 1}`;
+                      a.target = "_blank";
+                      a.rel = "noopener noreferrer";
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                    }, i * 300);
+                  });
+                  toast.success(`📥 Baixando ${mediaMessages.length} arquivo(s)!`);
+                }}
+              >
+                <Download className="w-4 h-4" />
+              </Button>
+            )}
           </div>
         </div>
 

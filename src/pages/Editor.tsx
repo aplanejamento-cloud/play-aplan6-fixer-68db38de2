@@ -61,6 +61,7 @@ const Editor = () => {
   const [searchParams] = useSearchParams();
   const remixPostId = searchParams.get("remix");
   const remixImageUrl = searchParams.get("image");
+  const remixCaption = searchParams.get("caption");
 
   const [image, setImage] = useState<string | null>(remixImageUrl || null);
   const [originalFile, setOriginalFile] = useState<File | null>(null);
@@ -71,7 +72,7 @@ const Editor = () => {
   const [showTextInput, setShowTextInput] = useState(false);
   const [newText, setNewText] = useState("");
   const [textColor, setTextColor] = useState("#ffffff");
-  const [postCaption, setPostCaption] = useState("");
+  const [postCaption, setPostCaption] = useState(remixCaption ? decodeURIComponent(remixCaption) : "");
   const [dragging, setDragging] = useState<{ type: "text" | "emoji"; id: string } | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
