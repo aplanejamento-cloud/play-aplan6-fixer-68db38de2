@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useHomeConfig, SecondaryPrize, Sponsor } from "@/hooks/useHomeConfig";
-import RichTextEditor from "./RichTextEditor";
+import RichTextEditor from "@/components/feed/RichTextEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";

@@ -127,7 +127,7 @@ const LoginButton = () => {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
+      const result = await lovable.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
       });
       // If redirected, the page will reload - don't reset loading
