@@ -1,10 +1,10 @@
 import { useGameState } from "@/hooks/useGameState";
 import { usePremios, useResgatarPremio, Premio } from "@/hooks/usePremios";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
-import { Gift, MapPin, Loader2, Lock, AlertTriangle, Ticket, Copy, CheckCircle2, Clock } from "lucide-react";
+import { Gift, MapPin, Loader2, Lock, AlertTriangle, Ticket, Copy, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -139,7 +139,7 @@ const PrateleiraSection = ({
   );
 };
 
-const TicketCard = ({ resgate, premioData }: { resgate: any; premioData?: any }) => {
+const TicketCard = ({ resgate, premioData, onCancel }: { resgate: any; premioData?: any; onCancel?: (id: string) => void }) => {
   const copyCode = () => {
     navigator.clipboard.writeText(resgate.codigo_ticket || "");
     toast.success("Código copiado!");
@@ -148,7 +148,6 @@ const TicketCard = ({ resgate, premioData }: { resgate: any; premioData?: any })
   return (
     <Card className="p-3 space-y-2 border-primary/20">
       <div className="flex items-center gap-3">
-        {/* Prize photo */}
         <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
           {premioData?.midia_url ? (
             <img src={premioData.midia_url} alt={premioData.titulo || "Prêmio"} className="w-full h-full object-cover" />
@@ -176,6 +175,11 @@ const TicketCard = ({ resgate, premioData }: { resgate: any; premioData?: any })
           <MapPin className="w-3 h-3" /> {resgate.endereco_completo}
         </p>
       )}
+      {resgate.status === "pendente" && onCancel && (
+        <Button variant="outline" size="sm" className="w-full text-destructive border-destructive/30" onClick={() => onCancel(resgate.id)}>
+          <XCircle className="w-4 h-4 mr-1" /> Cancelar troca
+        </Button>
+      )}
     </Card>
   );
 };
@@ -185,6 +189,7 @@ const Premios = () => {
   const { gameState } = useGameState();
   const resgatar = useResgatarPremio();
   const [rescuingId, setRescuingId] = useState<string | null>(null);
+  const qc = useQueryClient();
 
   const { data: profile } = useQuery({
     queryKey: ["profile_likes", user?.id],
@@ -208,6 +213,29 @@ const Premios = () => {
       return data;
     },
   });
+
+  const handleCancelResgate = async (resgateId: string) => {
+    try {
+      const resgate = meusResgates.find((r: any) => r.id === resgateId);
+      if (!resgate) return;
+      // Restore likes and stock
+      await supabase.from("resgates").delete().eq("id", resgateId);
+      const { data: prof } = await supabase.from("profiles").select("total_likes").eq("user_id", user!.id).single();
+      if (prof) {
+        await supabase.from("profiles").update({ total_likes: prof.total_likes + resgate.likes_gastos }).eq("user_id", user!.id);
+      }
+      const { data: premio } = await supabase.from("premios").select("estoque").eq("id", resgate.premio_id).single();
+      if (premio) {
+        await supabase.from("premios").update({ estoque: premio.estoque + 1 }).eq("id", resgate.premio_id);
+      }
+      qc.invalidateQueries({ queryKey: ["meus_resgates"] });
+      qc.invalidateQueries({ queryKey: ["profile_likes"] });
+      qc.invalidateQueries({ queryKey: ["premios"] });
+      toast.success("Troca cancelada. Likes devolvidos!");
+    } catch {
+      toast.error("Erro ao cancelar");
+    }
+  };
 
   const userLikes = profile?.total_likes ?? 0;
 
@@ -274,6 +302,9 @@ const Premios = () => {
           <p className="text-sm text-foreground font-medium">
             🎁 Trocar likes por prêmios abaixo
           </p>
+          <p className="text-xs text-destructive font-bold">
+            ⚠️ RETIRE no endereço INFORMANDO A SENHA. NÃO informe a senha sem retirar o produto!
+          </p>
           <p className="text-xs text-muted-foreground">
             📍 Retire no endereço do doador (não necessariamente em Guarujá).
           </p>
@@ -300,8 +331,11 @@ const Premios = () => {
             <h2 className="font-cinzel font-bold text-foreground text-lg flex items-center gap-2">
               <Ticket className="w-5 h-5" /> Prêmios Escolhidos
             </h2>
+            <p className="text-xs text-destructive font-bold">
+              ⚠️ RETIRE no endereço INFORMANDO A SENHA. NÃO informe a senha sem retirar o produto!
+            </p>
             {meusResgates.map((r: any) => (
-              <TicketCard key={r.id} resgate={r} premioData={r.premios} />
+              <TicketCard key={r.id} resgate={r} premioData={r.premios} onCancel={handleCancelResgate} />
             ))}
           </section>
         )}

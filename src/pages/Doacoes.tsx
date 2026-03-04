@@ -201,6 +201,7 @@ const DonationForm = () => {
 // ─── Main Page ────────────────────────────────────────────
 const Doacoes = () => {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const { data: minhasDoacoes = [] } = useMinhasDoacoes(user?.id);
 
   if (!user) {
@@ -221,7 +222,7 @@ const Doacoes = () => {
         <div>
           <h1 className="font-cinzel font-bold text-2xl text-foreground">🎁 Doe um Prêmio</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Doe um prêmio e receba likes quando aprovado. Por cada produto doado!
+            Doe um prêmio → receba likes quando aprovado + quando entregue ao usuário!
           </p>
         </div>
 
@@ -262,11 +263,29 @@ const Doacoes = () => {
 
                   {/* Ticket verification for approved donations */}
                   {isApproved && (
-                    <div className="border-t border-border pt-2">
+                    <div className="border-t border-border pt-2 space-y-2">
                       <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                         <Ticket className="w-3 h-3" /> Verificar senha do usuário para entrega:
                       </p>
                       <TicketVerifier doacaoId={d.id} />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-destructive border-destructive/30"
+                        onClick={async () => {
+                          if (!confirm("Remover este prêmio da prateleira?")) return;
+                          await supabase.from("doacoes_premios").delete().eq("id", d.id);
+                          // Also remove from premios if exists
+                          if (d.titulo) {
+                            await supabase.from("premios").delete().eq("titulo", d.titulo).eq("midia_url", d.midia_url);
+                          }
+                          qc.invalidateQueries({ queryKey: ["minhas_doacoes"] });
+                          qc.invalidateQueries({ queryKey: ["premios"] });
+                          toast.success("Prêmio removido da prateleira.");
+                        }}
+                      >
+                        <XCircle className="w-4 h-4 mr-1" /> Remover da prateleira
+                      </Button>
                     </div>
                   )}
                 </Card>
