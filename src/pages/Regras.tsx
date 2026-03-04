@@ -5,8 +5,9 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import AppHeader from "@/components/AppHeader";
 import InviteButton from "@/components/InviteButton";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Upload, Trash2, Loader2, ChevronLeft, ChevronRight, X, Play } from "lucide-react";
+import { Upload, Trash2, Loader2, ChevronLeft, ChevronRight, X, Play, Save } from "lucide-react";
 import { toast } from "sonner";
 
 interface RegrasItem {
@@ -22,6 +23,8 @@ const Regras = () => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [fullscreenItem, setFullscreenItem] = useState<RegrasItem | null>(null);
+  const [regrasText, setRegrasText] = useState("");
+  const [textLoaded, setTextLoaded] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["regras-content"],
@@ -37,6 +40,44 @@ const Regras = () => {
 
   const photos = items.filter((i) => i.media_type === "image");
   const videos = items.filter((i) => i.media_type === "video");
+
+  // Fetch regras text
+  const { data: regrasTextData } = useQuery({
+    queryKey: ["regras-text"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("regras_content")
+        .select("*")
+        .eq("media_type", "text")
+        .order("position")
+        .limit(1);
+      return data?.[0] || null;
+    },
+  });
+
+  if (regrasTextData && !textLoaded) {
+    setRegrasText(regrasTextData.media_url || "");
+    setTextLoaded(true);
+  }
+
+  const saveTextMutation = useMutation({
+    mutationFn: async (text: string) => {
+      if (regrasTextData) {
+        await supabase.from("regras_content").update({ media_url: text }).eq("id", regrasTextData.id);
+      } else {
+        await supabase.from("regras_content").insert({
+          media_url: text,
+          media_type: "text",
+          position: -1,
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["regras-text"] });
+      toast.success("Texto das regras salvo!");
+    },
+    onError: () => toast.error("Erro ao salvar texto"),
+  });
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -88,14 +129,38 @@ const Regras = () => {
           📜 <span className="text-primary">Regras do Jogo</span>
         </h1>
 
-        {/* Admin upload */}
+        {/* Admin text editor */}
         {isAdmin && (
-          <div className="flex gap-2 justify-center">
-            <input ref={fileRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={handleUpload} />
-            <Button onClick={() => fileRef.current?.click()} disabled={uploading} variant="outline" className="border-primary/50 text-primary">
-              {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-              Adicionar Fotos/Vídeos
-            </Button>
+          <div className="space-y-3">
+            <h2 className="font-cinzel text-lg text-foreground">✏️ Texto das Regras</h2>
+            <Textarea
+              value={regrasText}
+              onChange={(e) => setRegrasText(e.target.value)}
+              maxLength={5000}
+              placeholder="Digite as regras do jogo aqui..."
+              className="min-h-[200px] bg-card border-border"
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">{regrasText.length}/5000</span>
+              <Button onClick={() => saveTextMutation.mutate(regrasText)} disabled={saveTextMutation.isPending} size="sm">
+                {saveTextMutation.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                Salvar Texto
+              </Button>
+            </div>
+            <div className="flex gap-2 justify-center">
+              <input ref={fileRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={handleUpload} />
+              <Button onClick={() => fileRef.current?.click()} disabled={uploading} variant="outline" className="border-primary/50 text-primary">
+                {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                Adicionar Fotos/Vídeos
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Display regras text for all users */}
+        {!isAdmin && regrasTextData?.media_url && (
+          <div className="bg-card border border-border rounded-xl p-4 whitespace-pre-wrap text-sm text-foreground">
+            {regrasTextData.media_url}
           </div>
         )}
 
