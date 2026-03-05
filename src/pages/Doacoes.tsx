@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Upload, Loader2, Clock, CheckCircle2, Lock, Image as ImageIcon, MapPin, Ticket, Send, XCircle, Package } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 // ─── Donor Ticket Verification with Likes Transfer ────────
 const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: string; doacaoUserId: string; likesRecebidos: number }) => {
@@ -138,6 +139,7 @@ const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: 
 // ─── Donation Form ────────────────────────────────────────
 const DonationForm = () => {
   const { user } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const { upload, uploading } = useMediaUploadPremio();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -146,7 +148,7 @@ const DonationForm = () => {
   const [descricao, setDescricao] = useState("");
   const [likesRecebidos, setLikesRecebidos] = useState(100);
   const [quantidade, setQuantidade] = useState(1);
-  const [prateleira, setPrateleira] = useState<"1" | "2">("1");
+  const [prateleira, setPrateleira] = useState<"1" | "2">("2");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [estado, setEstado] = useState("");
@@ -239,7 +241,7 @@ const DonationForm = () => {
         <Select value={prateleira} onValueChange={(v) => setPrateleira(v as "1" | "2")}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="1">🏆 Prêmios Maiores</SelectItem>
+            {isAdmin && <SelectItem value="1">🏆 Prêmios Maiores</SelectItem>}
             <SelectItem value="2">📍 Retirada Local Doador</SelectItem>
           </SelectContent>
         </Select>
