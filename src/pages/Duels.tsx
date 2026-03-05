@@ -184,12 +184,12 @@ const Duels = () => {
           </CardContent>
         </Card>
 
-        {/* Pending Duels */}
-        {pendingDuels.length > 0 && (
+        {/* Recebidos - duels where I am challenged */}
+        {pendingDuels.filter(d => d.challenged_id === user?.id).length > 0 && (
           <Card className="bg-card/80 border-primary/50 border-2">
             <CardContent className="py-4 space-y-3">
-              <h3 className="font-cinzel text-sm text-primary animate-pulse-gold">🔔 Desafios Pendentes</h3>
-              {pendingDuels.map((duel) => (
+              <h3 className="font-cinzel text-sm text-primary animate-pulse-gold">📥 Recebidos</h3>
+              {pendingDuels.filter(d => d.challenged_id === user?.id).map((duel) => (
                 <div key={duel.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2">
                     <Avatar className="w-10 h-10 border border-primary">
@@ -202,13 +202,39 @@ const Duels = () => {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={() => acceptDuel(duel.id)} className="bg-success text-success-foreground">
-                      <CheckCircle className="w-4 h-4" />
+                    <Button size="sm" onClick={() => acceptDuel(duel.id)} className="bg-primary text-primary-foreground">
+                      <CheckCircle className="w-4 h-4 mr-1" /> Aceitar
                     </Button>
                     <Button size="sm" variant="destructive" onClick={() => refuseDuel(duel)}>
-                      <XCircle className="w-4 h-4" />
+                      <XCircle className="w-4 h-4 mr-1" /> Recusar
                     </Button>
                   </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Envios - duels where I am challenger */}
+        {pendingDuels.filter(d => d.challenger_id === user?.id).length > 0 && (
+          <Card className="bg-card/80 border-accent/30">
+            <CardContent className="py-4 space-y-3">
+              <h3 className="font-cinzel text-sm text-accent-foreground">📤 Envios aguardando</h3>
+              {pendingDuels.filter(d => d.challenger_id === user?.id).map((duel) => (
+                <div key={duel.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="w-10 h-10 border border-border">
+                      <AvatarImage src={duel.challenged_profile?.avatar_url || ""} />
+                      <AvatarFallback className="bg-secondary">{duel.challenged_profile?.name?.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{duel.challenged_profile?.name}</p>
+                      <p className="text-xs text-muted-foreground">Aguardando resposta</p>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => refuseDuel(duel)}>
+                    <XCircle className="w-4 h-4 mr-1" /> Cancelar
+                  </Button>
                 </div>
               ))}
             </CardContent>

@@ -3,11 +3,12 @@ import { usePremios, useResgatarPremio, Premio } from "@/hooks/usePremios";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
-import { Gift, MapPin, Loader2, Lock, AlertTriangle, Ticket, Copy, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { useState, useRef } from "react";
+import { Gift, MapPin, Loader2, Lock, AlertTriangle, Ticket, Copy, CheckCircle2, Clock, XCircle, Volume2, VolumeX, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AppHeader from "@/components/AppHeader";
 import InviteButton from "@/components/InviteButton";
 import { cn } from "@/lib/utils";
@@ -18,20 +19,54 @@ const PRATELEIRA_INFO = {
   2: { label: "📍 Retirada Local Doador", icon: MapPin, desc: "Retire pessoalmente no endereço do doador" },
 } as const;
 
-const generateTicketCode = () => {
-  return String(Math.floor(100000 + Math.random() * 900000));
+const ESTADOS = [
+  { value: "all", label: "Todos os estados" },
+  { value: "SP", label: "São Paulo" },
+  { value: "RJ", label: "Rio de Janeiro" },
+  { value: "MG", label: "Minas Gerais" },
+  { value: "BA", label: "Bahia" },
+  { value: "RS", label: "Rio Grande do Sul" },
+];
+
+const generateTicketCode = () => String(Math.floor(100000 + Math.random() * 900000));
+
+// ─── Video with play/pause + mute ─────────────────────────
+const VideoPlayer = ({ src, className }: { src: string; className?: string }) => {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [muted, setMuted] = useState(true);
+
+  const togglePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!ref.current) return;
+    if (playing) { ref.current.pause(); } else { ref.current.play(); }
+    setPlaying(!playing);
+  };
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!ref.current) return;
+    ref.current.muted = !muted;
+    setMuted(!muted);
+  };
+
+  return (
+    <div className="relative w-full h-full group">
+      <video ref={ref} src={src} className={className} muted loop playsInline />
+      <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button onClick={togglePlay} className="bg-background/70 rounded-full p-1">
+          {playing ? <Pause className="w-4 h-4 text-foreground" /> : <Play className="w-4 h-4 text-foreground" />}
+        </button>
+        <button onClick={toggleMute} className="bg-background/70 rounded-full p-1">
+          {muted ? <VolumeX className="w-4 h-4 text-foreground" /> : <Volume2 className="w-4 h-4 text-foreground" />}
+        </button>
+      </div>
+    </div>
+  );
 };
 
-const PrizeCard = ({
-  premio,
-  userLikes,
-  onResgatar,
-  isRescuing,
-}: {
-  premio: Premio;
-  userLikes: number;
-  onResgatar: (p: Premio) => void;
-  isRescuing: boolean;
+// ─── Prize Card ───────────────────────────────────────────
+const PrizeCard = ({ premio, userLikes, onResgatar, isRescuing }: {
+  premio: Premio; userLikes: number; onResgatar: (p: Premio) => void; isRescuing: boolean;
 }) => {
   const canAfford = userLikes >= premio.likes_custo;
   const wouldEliminate = userLikes > 0 && userLikes - premio.likes_custo <= 0;
@@ -43,7 +78,7 @@ const PrizeCard = ({
       <div className="h-[200px] relative overflow-hidden bg-muted">
         {premio.midia_url ? (
           premio.midia_url.match(/\.(mp4|webm|mov)$/i) ? (
-            <video src={premio.midia_url} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+            <VideoPlayer src={premio.midia_url} className="w-full h-full object-cover" />
           ) : (
             <img src={premio.midia_url} alt={premio.titulo || "Prêmio"} className="w-full h-full object-cover" />
           )
@@ -63,19 +98,15 @@ const PrizeCard = ({
           </div>
         )}
       </div>
-
       <div className="flex-1 p-4 flex flex-col gap-2">
         {premio.titulo && <h3 className="font-montserrat font-bold text-foreground text-sm line-clamp-2">{premio.titulo}</h3>}
         {premio.descricao && <p className="text-xs text-muted-foreground line-clamp-2">{premio.descricao}</p>}
-        {premio.quantidade > 1 && (
-          <p className="text-xs text-muted-foreground">Qtd: {premio.quantidade} unidades</p>
-        )}
+        {premio.quantidade > 1 && <p className="text-xs text-muted-foreground">Qtd: {premio.quantidade} unidades</p>}
         {enderecoCompleto && (
           <p className="text-xs text-muted-foreground flex items-center gap-1">
             <MapPin className="w-3 h-3" /> {enderecoCompleto}
           </p>
         )}
-
         <div className="flex items-center justify-between mt-auto pt-2">
           <div>
             <p className={cn("font-cinzel font-bold text-base", canAfford ? "text-primary" : "text-destructive")}>
@@ -86,13 +117,8 @@ const PrizeCard = ({
             </p>
           </div>
           {premio.estoque > 0 && (
-            <Button
-              size="sm"
-              onClick={() => onResgatar(premio)}
-              disabled={isRescuing || !canAfford || wouldEliminate}
-              className="font-cinzel font-bold"
-              variant={canAfford && !wouldEliminate ? "default" : "outline"}
-            >
+            <Button size="sm" onClick={() => onResgatar(premio)} disabled={isRescuing || !canAfford || wouldEliminate}
+              className="font-cinzel font-bold" variant={canAfford && !wouldEliminate ? "default" : "outline"}>
               {isRescuing ? <Loader2 className="w-4 h-4 animate-spin" /> : wouldEliminate ? "JOGUE MAIS!" : canAfford ? "TROCAR" : "SEM SALDO"}
             </Button>
           )}
@@ -102,21 +128,19 @@ const PrizeCard = ({
   );
 };
 
-const PrateleiraSection = ({
-  prateleira,
-  userLikes,
-  onResgatar,
-  rescuingId,
-}: {
-  prateleira: 1 | 2;
-  userLikes: number;
-  onResgatar: (p: Premio) => void;
-  rescuingId: string | null;
+// ─── Prateleira Section ───────────────────────────────────
+const PrateleiraSection = ({ prateleira, userLikes, onResgatar, rescuingId, filtroEstado }: {
+  prateleira: 1 | 2; userLikes: number; onResgatar: (p: Premio) => void; rescuingId: string | null; filtroEstado: string;
 }) => {
   const { data: premios = [], isLoading } = usePremios(prateleira);
   const info = PRATELEIRA_INFO[prateleira];
-  // Filter out zero-stock items completely
-  const availablePremios = premios.filter((p) => p.estoque > 0);
+  const availablePremios = premios.filter((p) => {
+    if (p.estoque <= 0) return false;
+    if (filtroEstado && filtroEstado !== "all" && p.estado) {
+      return p.estado.toLowerCase().includes(filtroEstado.toLowerCase());
+    }
+    return true;
+  });
 
   return (
     <section className="space-y-3">
@@ -139,6 +163,7 @@ const PrateleiraSection = ({
   );
 };
 
+// ─── Ticket Card ──────────────────────────────────────────
 const TicketCard = ({ resgate, premioData, onCancel }: { resgate: any; premioData?: any; onCancel?: (id: string) => void }) => {
   const copyCode = () => {
     navigator.clipboard.writeText(resgate.codigo_ticket || "");
@@ -159,16 +184,18 @@ const TicketCard = ({ resgate, premioData, onCancel }: { resgate: any; premioDat
         </div>
         <div className="flex-1 min-w-0">
           {premioData?.titulo && <p className="text-sm font-semibold text-foreground truncate">{premioData.titulo}</p>}
+          {/* Senha first */}
           <div className="flex items-center gap-2">
             <span className="font-mono font-bold text-lg text-primary">{resgate.codigo_ticket}</span>
             <button onClick={copyCode} className="text-muted-foreground hover:text-primary"><Copy className="w-4 h-4" /></button>
           </div>
+          {/* Status below */}
+          <div className="flex items-center gap-1 mt-0.5">
+            {resgate.status === "pendente" ? <Clock className="w-3 h-3 animate-pulse text-muted-foreground" /> : <CheckCircle2 className="w-3 h-3 text-primary" />}
+            <span className="text-xs text-muted-foreground">{resgate.status === "pendente" ? "Aguardando retirada" : resgate.status}</span>
+          </div>
           <p className="text-xs text-muted-foreground">{resgate.likes_gastos} likes gastos</p>
         </div>
-        <Badge variant="outline" className="flex items-center gap-1 text-muted-foreground">
-          {resgate.status === "pendente" ? <Clock className="w-3 h-3 animate-pulse" /> : <CheckCircle2 className="w-3 h-3 text-primary" />}
-          {resgate.status === "pendente" ? "Aguardando" : resgate.status}
-        </Badge>
       </div>
       {resgate.endereco_completo && (
         <p className="text-xs text-muted-foreground flex items-center gap-1">
@@ -184,11 +211,13 @@ const TicketCard = ({ resgate, premioData, onCancel }: { resgate: any; premioDat
   );
 };
 
+// ─── Main Page ────────────────────────────────────────────
 const Premios = () => {
   const { user } = useAuth();
   const { gameState } = useGameState();
   const resgatar = useResgatarPremio();
   const [rescuingId, setRescuingId] = useState<string | null>(null);
+  const [filtroEstado, setFiltroEstado] = useState("all");
   const qc = useQueryClient();
 
   const { data: profile } = useQuery({
@@ -218,7 +247,6 @@ const Premios = () => {
     try {
       const resgate = meusResgates.find((r: any) => r.id === resgateId);
       if (!resgate) return;
-      // Restore likes and stock
       await supabase.from("resgates").delete().eq("id", resgateId);
       const { data: prof } = await supabase.from("profiles").select("total_likes").eq("user_id", user!.id).single();
       if (prof) {
@@ -231,7 +259,7 @@ const Premios = () => {
       qc.invalidateQueries({ queryKey: ["meus_resgates"] });
       qc.invalidateQueries({ queryKey: ["profile_likes"] });
       qc.invalidateQueries({ queryKey: ["premios"] });
-      toast.success("Troca cancelada. Likes devolvidos!");
+      toast.success("Cancelado e removido!");
     } catch {
       toast.error("Erro ao cancelar");
     }
@@ -241,30 +269,15 @@ const Premios = () => {
 
   const handleResgatar = async (premio: Premio) => {
     if (!user) return;
-    if (userLikes < premio.likes_custo) {
-      toast.error("Não tem likes suficientes!");
-      return;
-    }
-    if (userLikes - premio.likes_custo === 0) {
-      toast.error("⚠️ Ganhe mais likes antes! Ficar com 0 likes te elimina do jogo por 3 dias.");
-      return;
-    }
+    if (userLikes < premio.likes_custo) { toast.error("Não tem likes suficientes!"); return; }
+    if (userLikes - premio.likes_custo === 0) { toast.error("⚠️ Ganhe mais likes antes! Ficar com 0 likes te elimina do jogo por 3 dias."); return; }
     const ticketCode = generateTicketCode();
     const enderecoCompleto = [premio.endereco, premio.numero, premio.bairro, premio.cidade, premio.estado].filter(Boolean).join(", ");
-
     setRescuingId(premio.id);
     try {
-      await resgatar.mutateAsync({
-        premioId: premio.id,
-        userId: user.id,
-        likesCusto: premio.likes_custo,
-        codigoTicket: ticketCode,
-        enderecoCompleto: enderecoCompleto || null,
-      });
+      await resgatar.mutateAsync({ premioId: premio.id, userId: user.id, likesCusto: premio.likes_custo, codigoTicket: ticketCode, enderecoCompleto: enderecoCompleto || null });
       toast.success(`🎫 Seu Ticket Retirada: ${ticketCode}`, { duration: 10000 });
-    } catch {
-      // error handled in hook
-    }
+    } catch { /* handled in hook */ }
     setRescuingId(null);
   };
 
@@ -297,20 +310,11 @@ const Premios = () => {
       <InviteButton />
 
       <div className="container mx-auto max-w-2xl pt-4 space-y-8">
-        {/* Instructions */}
         <div className="mx-4 space-y-2">
-          <p className="text-sm text-foreground font-medium">
-            🎁 Trocar likes por prêmios abaixo
-          </p>
-          <p className="text-xs text-destructive font-bold">
-            ⚠️ RETIRE no endereço INFORMANDO A SENHA. NÃO informe a senha sem retirar o produto!
-          </p>
-          <p className="text-xs text-muted-foreground">
-            📍 Retire no endereço do doador (não necessariamente em Guarujá).
-          </p>
-          {userLikes === 0 && (
-            <p className="text-xs text-destructive font-bold">⚔️ Jogue mais! Você está com 0 likes e eliminado.</p>
-          )}
+          <p className="text-sm text-foreground font-medium">🎁 Trocar likes por prêmios abaixo</p>
+          <p className="text-xs text-destructive font-bold">⚠️ RETIRE no endereço INFORMANDO A SENHA. NÃO informe a senha sem retirar o produto!</p>
+          <p className="text-xs text-muted-foreground">📍 Retire no endereço do doador (não necessariamente em Guarujá).</p>
+          {userLikes === 0 && <p className="text-xs text-destructive font-bold">⚔️ Jogue mais! Você está com 0 likes e eliminado.</p>}
         </div>
 
         <Card className="mx-4 p-4 flex items-center justify-between border-primary/30 bg-card/80">
@@ -321,19 +325,30 @@ const Premios = () => {
           <Gift className="w-8 h-8 text-primary/60" />
         </Card>
 
+        {/* Filtro por estado */}
+        <div className="mx-4">
+          <Select value={filtroEstado} onValueChange={setFiltroEstado}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Filtrar por estado" />
+            </SelectTrigger>
+            <SelectContent>
+              {ESTADOS.map((e) => (
+                <SelectItem key={e.value} value={e.value}>{e.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         {([1, 2] as const).map((p) => (
-          <PrateleiraSection key={p} prateleira={p} userLikes={userLikes} onResgatar={handleResgatar} rescuingId={rescuingId} />
+          <PrateleiraSection key={p} prateleira={p} userLikes={userLikes} onResgatar={handleResgatar} rescuingId={rescuingId} filtroEstado={filtroEstado} />
         ))}
 
-        {/* Meus resgates / tickets */}
         {meusResgates.length > 0 && (
           <section className="space-y-3 px-4">
             <h2 className="font-cinzel font-bold text-foreground text-lg flex items-center gap-2">
               <Ticket className="w-5 h-5" /> Prêmios Escolhidos
             </h2>
-            <p className="text-xs text-destructive font-bold">
-              ⚠️ RETIRE no endereço INFORMANDO A SENHA. NÃO informe a senha sem retirar o produto!
-            </p>
+            <p className="text-xs text-destructive font-bold">⚠️ RETIRE no endereço INFORMANDO A SENHA. NÃO informe a senha sem retirar o produto!</p>
             {meusResgates.map((r: any) => (
               <TicketCard key={r.id} resgate={r} premioData={r.premios} onCancel={handleCancelResgate} />
             ))}
