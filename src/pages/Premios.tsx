@@ -3,7 +3,7 @@ import { usePremios, useResgatarPremio, Premio } from "@/hooks/usePremios";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { Gift, MapPin, Loader2, Lock, AlertTriangle, Ticket, Copy, CheckCircle2, Clock, XCircle, Volume2, VolumeX, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,38 @@ import InviteButton from "@/components/InviteButton";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+// ─── City Filter (dynamic from premios data) ─────────────
+const CityFilter = ({ filtroEstado, filtroCidade, setFiltroCidade }: {
+  filtroEstado: string; filtroCidade: string; setFiltroCidade: (v: string) => void;
+}) => {
+  const { data: allPremios = [] } = usePremios();
+  const cities = useMemo(() => {
+    if (!filtroEstado || filtroEstado === "all") return [];
+    const set = new Set<string>();
+    allPremios.forEach((p) => {
+      if (p.cidade && p.estado?.toLowerCase().includes(filtroEstado.toLowerCase())) {
+        set.add(p.cidade);
+      }
+    });
+    return Array.from(set).sort();
+  }, [allPremios, filtroEstado]);
+
+  if (filtroEstado === "all" || cities.length === 0) return null;
+
+  return (
+    <Select value={filtroCidade} onValueChange={setFiltroCidade}>
+      <SelectTrigger className="flex-1">
+        <SelectValue placeholder="Cidade" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">Todas as cidades</SelectItem>
+        {cities.map((c) => (
+          <SelectItem key={c} value={c}>{c}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+};
 const PRATELEIRA_INFO = {
   1: { label: "🏆 Prêmios Maiores", icon: Gift, desc: "Troque seus likes por prêmios abaixo" },
   2: { label: "📍 Retirada Local Doador", icon: MapPin, desc: "Retire pessoalmente no endereço do doador" },
@@ -26,6 +58,13 @@ const ESTADOS = [
   { value: "MG", label: "Minas Gerais" },
   { value: "BA", label: "Bahia" },
   { value: "RS", label: "Rio Grande do Sul" },
+  { value: "PR", label: "Paraná" },
+  { value: "SC", label: "Santa Catarina" },
+  { value: "GO", label: "Goiás" },
+  { value: "PE", label: "Pernambuco" },
+  { value: "CE", label: "Ceará" },
+  { value: "PA", label: "Pará" },
+  { value: "ES", label: "Espírito Santo" },
 ];
 
 const generateTicketCode = () => String(Math.floor(100000 + Math.random() * 900000));
@@ -137,15 +176,18 @@ const PrizeCard = ({ premio, userLikes, onResgatar, isRescuing }: {
 };
 
 // ─── Prateleira Section ───────────────────────────────────
-const PrateleiraSection = ({ prateleira, userLikes, onResgatar, rescuingId, filtroEstado }: {
-  prateleira: 1 | 2; userLikes: number; onResgatar: (p: Premio) => void; rescuingId: string | null; filtroEstado: string;
+const PrateleiraSection = ({ prateleira, userLikes, onResgatar, rescuingId, filtroEstado, filtroCidade }: {
+  prateleira: 1 | 2; userLikes: number; onResgatar: (p: Premio) => void; rescuingId: string | null; filtroEstado: string; filtroCidade: string;
 }) => {
   const { data: premios = [], isLoading } = usePremios(prateleira);
   const info = PRATELEIRA_INFO[prateleira];
   const availablePremios = premios.filter((p) => {
     if (p.estoque <= 0) return false;
     if (filtroEstado && filtroEstado !== "all" && p.estado) {
-      return p.estado.toLowerCase().includes(filtroEstado.toLowerCase());
+      if (!p.estado.toLowerCase().includes(filtroEstado.toLowerCase())) return false;
+    }
+    if (filtroCidade && filtroCidade !== "all" && p.cidade) {
+      if (!p.cidade.toLowerCase().includes(filtroCidade.toLowerCase())) return false;
     }
     return true;
   });
@@ -178,12 +220,18 @@ const TicketCard = ({ resgate, premioData, onCancel }: { resgate: any; premioDat
     toast.success("Código copiado!");
   };
 
+  const isVideo = premioData?.midia_url?.match(/\.(mp4|webm|mov)$/i);
+
   return (
     <Card className="p-3 space-y-2 border-primary/20">
       <div className="flex items-center gap-3">
         <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
           {premioData?.midia_url ? (
-            <img src={premioData.midia_url} alt={premioData.titulo || "Prêmio"} className="w-full h-full object-cover" />
+            isVideo ? (
+              <video src={premioData.midia_url} className="w-full h-full object-cover" muted preload="metadata" />
+            ) : (
+              <img src={premioData.midia_url} alt={premioData.titulo || "Prêmio"} className="w-full h-full object-cover" />
+            )
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <Ticket className="w-7 h-7 text-primary" />
@@ -192,12 +240,10 @@ const TicketCard = ({ resgate, premioData, onCancel }: { resgate: any; premioDat
         </div>
         <div className="flex-1 min-w-0">
           {premioData?.titulo && <p className="text-sm font-semibold text-foreground truncate">{premioData.titulo}</p>}
-          {/* Senha first */}
           <div className="flex items-center gap-2">
             <span className="font-mono font-bold text-lg text-primary">{resgate.codigo_ticket}</span>
             <button onClick={copyCode} className="text-muted-foreground hover:text-primary"><Copy className="w-4 h-4" /></button>
           </div>
-          {/* Status below */}
           <div className="flex items-center gap-1 mt-0.5">
             {resgate.status === "pendente" ? <Clock className="w-3 h-3 animate-pulse text-muted-foreground" /> : <CheckCircle2 className="w-3 h-3 text-primary" />}
             <span className="text-xs text-muted-foreground">{resgate.status === "pendente" ? "Aguardando retirada" : resgate.status}</span>
@@ -208,6 +254,11 @@ const TicketCard = ({ resgate, premioData, onCancel }: { resgate: any; premioDat
       {resgate.endereco_completo && (
         <p className="text-xs text-muted-foreground flex items-center gap-1">
           <MapPin className="w-3 h-3" /> {resgate.endereco_completo}
+        </p>
+      )}
+      {(resgate as any).whatsapp_doador && (
+        <p className="text-xs text-muted-foreground flex items-center gap-1">
+          📱 WhatsApp doador: <span className="font-medium text-foreground">{(resgate as any).whatsapp_doador}</span>
         </p>
       )}
       {resgate.status === "pendente" && onCancel && (
@@ -226,6 +277,7 @@ const Premios = () => {
   const resgatar = useResgatarPremio();
   const [rescuingId, setRescuingId] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState("all");
+  const [filtroCidade, setFiltroCidade] = useState("all");
   const qc = useQueryClient();
 
   const { data: profile } = useQuery({
@@ -255,19 +307,19 @@ const Premios = () => {
     try {
       const resgate = meusResgates.find((r: any) => r.id === resgateId);
       if (!resgate) return;
+      // Delete the resgate completely (it will disappear from UI)
       await supabase.from("resgates").delete().eq("id", resgateId);
+      // Refund likes to user
       const { data: prof } = await supabase.from("profiles").select("total_likes").eq("user_id", user!.id).single();
       if (prof) {
         await supabase.from("profiles").update({ total_likes: prof.total_likes + resgate.likes_gastos }).eq("user_id", user!.id);
       }
-      const { data: premio } = await supabase.from("premios").select("estoque").eq("id", resgate.premio_id).single();
-      if (premio) {
-        await supabase.from("premios").update({ estoque: premio.estoque + 1 }).eq("id", resgate.premio_id);
-      }
+      // Note: estoque is NOT incremented here because it was never decremented on selection
+      // (estoque only decrements when doador verifies senha)
       qc.invalidateQueries({ queryKey: ["meus_resgates"] });
       qc.invalidateQueries({ queryKey: ["profile_likes"] });
       qc.invalidateQueries({ queryKey: ["premios"] });
-      toast.success("Cancelado e removido!");
+      toast.success("Troca cancelada! Likes devolvidos.");
     } catch {
       toast.error("Erro ao cancelar");
     }
@@ -333,11 +385,11 @@ const Premios = () => {
           <Gift className="w-8 h-8 text-primary/60" />
         </Card>
 
-        {/* Filtro por estado */}
-        <div className="mx-4">
-          <Select value={filtroEstado} onValueChange={setFiltroEstado}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Filtrar por estado" />
+        {/* Filtro por estado + cidade */}
+        <div className="mx-4 flex gap-3">
+          <Select value={filtroEstado} onValueChange={(v) => { setFiltroEstado(v); setFiltroCidade("all"); }}>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
               {ESTADOS.map((e) => (
@@ -345,10 +397,11 @@ const Premios = () => {
               ))}
             </SelectContent>
           </Select>
+          <CityFilter filtroEstado={filtroEstado} filtroCidade={filtroCidade} setFiltroCidade={setFiltroCidade} />
         </div>
 
         {([1, 2] as const).map((p) => (
-          <PrateleiraSection key={p} prateleira={p} userLikes={userLikes} onResgatar={handleResgatar} rescuingId={rescuingId} filtroEstado={filtroEstado} />
+          <PrateleiraSection key={p} prateleira={p} userLikes={userLikes} onResgatar={handleResgatar} rescuingId={rescuingId} filtroEstado={filtroEstado} filtroCidade={filtroCidade} />
         ))}
 
         {meusResgates.length > 0 && (
