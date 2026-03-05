@@ -144,7 +144,7 @@ const DonationForm = () => {
       </div>
 
       <Input placeholder="Título do prêmio (opcional)" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
-      <Input placeholder="WhatsApp para contato *" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className={!whatsapp.trim() ? "border-destructive/50" : ""} />
+      <Input placeholder="WhatsApp para contato *" type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className={!whatsapp.trim() ? "border-destructive/50" : ""} />
       <Input placeholder="Descrição (opcional)" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
 
       <div className="flex gap-3">
