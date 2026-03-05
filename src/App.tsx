@@ -79,6 +79,15 @@ const AuthProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const UsernameRedirect = () => {
+  const path = window.location.pathname.slice(1);
+  if (path.startsWith('@')) {
+    const username = path.slice(1);
+    return <ProfileByName />;
+  }
+  return <NotFound />;
+};
+
 const AppContent = () => {
   const { user } = useAuth();
 
