@@ -231,8 +231,8 @@ const EditorModal = ({ open, onOpenChange }: EditorModalProps) => {
             )}
 
             {/* Filters */}
-            <div className="overflow-x-auto">
-              <div className="flex gap-1.5 pb-1">
+            <div className="overflow-x-auto scrollbar-thin" style={{ scrollbarWidth: 'thin' }}>
+              <div className="flex gap-1.5 pb-2">
                 {FILTERS.map((f, i) => (
                   <button key={f.name} onClick={() => setActiveFilter(i)} className={cn("flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg text-[10px] font-medium whitespace-nowrap transition-all min-w-[50px]", i === activeFilter ? "bg-primary/20 text-primary border border-primary/30" : "bg-card border border-border text-muted-foreground")}>
                     <f.icon className="w-3.5 h-3.5" />
