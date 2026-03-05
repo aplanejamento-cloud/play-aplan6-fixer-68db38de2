@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import CreatePostForm from "@/components/feed/CreatePostForm";
+import JuizPostForm from "@/components/feed/JuizPostForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGameState } from "@/hooks/useGameState";
 import { useUserMedia } from "@/hooks/useUserMedia";
@@ -505,17 +506,9 @@ const Profile = () => {
 
         {/* Juiz Publish Section */}
         {isOwnProfile && profile?.user_type === "juiz" && gameState?.game_on && (
-          <Card className="bg-card/80 border-primary/30">
-            <CardContent className="py-4 space-y-3">
-              <h3 className="font-cinzel text-lg text-primary text-center flex items-center justify-center gap-2">
-                ⚔️ Publicar <span className="text-sm text-muted-foreground">({3 - ((profile as any)?.daily_posts || 0)}/3 hoje)</span>
-              </h3>
-              <p className="text-xs text-muted-foreground text-center">
-                Juízes podem publicar até 3 vezes por dia durante o jogo.
-              </p>
-              <CreatePostForm />
-            </CardContent>
-          </Card>
+          <div className="space-y-2">
+            <JuizPostForm />
+          </div>
         )}
 
         {/* Own Posts (juízes: desafios pagos + posts; jogadores: posts) */}
