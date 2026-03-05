@@ -33,6 +33,7 @@ import AdminPremiumUsers from "./pages/AdminPremiumUsers";
 import AdminCulturaStats from "./pages/AdminCulturaStats";
 import Eliminados from "./pages/Eliminados";
 import SosAjuda from "./pages/SosAjuda";
+import AuthCallback from "./pages/AuthCallback";
 import DailyReportModal from "@/components/retention/DailyReportModal";
 import JuizDoacaoPopup from "@/components/retention/JuizDoacaoPopup";
 
@@ -100,6 +101,7 @@ const AppContent = () => {
         <Route path="/@:username" element={<ProfileByName />} />
         <Route path="/patrocinador" element={<Patrocinador />} />
         <Route path="/eliminados" element={<Eliminados />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
 
         {/* Auth-only but game-state-independent */}
         <Route path="/profile" element={<AuthProtectedRoute><Profile /></AuthProtectedRoute>} />
