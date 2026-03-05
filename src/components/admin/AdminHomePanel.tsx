@@ -109,20 +109,6 @@ const AdminHomePanel = () => {
 
       {expanded && (
         <div className="px-4 pb-4 space-y-6">
-          {/* SOS Badge */}
-          <Button
-            variant={sosPending > 0 ? "destructive" : "outline"}
-            onClick={() => navigate("/sos-ajuda")}
-            className="w-full"
-          >
-            <LifeBuoy className="h-4 w-4 mr-2" />
-            SOS Ajuda
-            {sosPending > 0 && (
-              <span className="ml-2 bg-destructive-foreground text-destructive text-xs px-2 py-0.5 rounded-full font-bold">
-                {sosPending}
-              </span>
-            )}
-          </Button>
 
           {/* Exit Admin Button */}
           <Button variant="destructive" onClick={handleExitAdmin} className="w-full">

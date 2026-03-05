@@ -38,12 +38,13 @@ const GlobalNav = () => {
     { path: "/bots-control", label: "Bots", icon: Bot, requiresGame: false, requiresAuth: true, requiresAdmin: true },
   ];
 
-  const visibleItems = allItems.filter((item) => {
-    if (item.requiresAuth && !user) return false;
-    if (item.requiresGame && !gameOn) return false;
-    if ((item as any).requiresAdmin && !isAdmin) return false;
-    return true;
-  });
+  const visibleItems = !user
+    ? allItems.filter((item) => !item.requiresAuth && !item.requiresGame && !(item as any).requiresAdmin)
+    : allItems.filter((item) => {
+        if (item.requiresGame && !gameOn) return false;
+        if ((item as any).requiresAdmin && !isAdmin) return false;
+        return true;
+      });
 
   useEffect(() => {
     if (!navRef.current) return;

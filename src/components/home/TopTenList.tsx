@@ -1,8 +1,10 @@
 import { Heart, Medal } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useNavigate } from "react-router-dom";
 
 interface TopPlayer {
   id: string;
+  userId?: string;
   name: string;
   avatarUrl?: string;
   likes: number;
@@ -27,6 +29,7 @@ const getMedalColor = (position: number) => {
 };
 
 const TopTenList = ({ players }: TopTenListProps) => {
+  const navigate = useNavigate();
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 justify-center mb-6">
@@ -41,7 +44,8 @@ const TopTenList = ({ players }: TopTenListProps) => {
         {players.map((player) => (
           <div
             key={player.id}
-            className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-xl bg-card/60 border border-border hover:border-primary/50 hover:shadow-gold transition-all duration-300 group"
+            onClick={() => player.userId && navigate(`/profile/${player.userId}`)}
+            className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-xl bg-card/60 border border-border hover:border-primary/50 hover:shadow-gold transition-all duration-300 group cursor-pointer"
           >
             {/* Position badge */}
             <div className={`flex items-center gap-1 ${getMedalColor(player.position)}`}>

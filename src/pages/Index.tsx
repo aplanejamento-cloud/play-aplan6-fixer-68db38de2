@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useSosPendingCount } from "@/hooks/useSos";
 import Logo from "@/components/home/Logo";
 import PrizeBanner from "@/components/home/PrizeBanner";
 import VideoPlaceholder from "@/components/home/VideoPlaceholder";
@@ -85,9 +86,11 @@ const Index = () => {
   const { isAdmin } = useIsAdmin();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { data: sosPending = 0 } = useSosPendingCount();
 
   const topTenFormatted = players.map((p, i) => ({
     id: p.id,
+    userId: p.user_id,
     name: p.name,
     likes: p.total_likes,
     position: i + 1,
@@ -126,6 +129,20 @@ const Index = () => {
               <AdminHomePanel />
               <AdminGamePanel />
               <AdminModerationPanel />
+              {/* SOS Badge - between Moderation and Pix */}
+              <Button
+                variant={sosPending > 0 ? "destructive" : "outline"}
+                onClick={() => navigate("/sos-ajuda")}
+                className="w-full"
+              >
+                <span className="mr-2">🆘</span>
+                SOS Ajuda
+                {sosPending > 0 && (
+                  <span className="ml-2 bg-destructive-foreground text-destructive text-xs px-2 py-0.5 rounded-full font-bold">
+                    {sosPending}
+                  </span>
+                )}
+              </Button>
               <AdminPixPanel />
               <AdminTemasPanel />
               <AdminAssetsPanel />
