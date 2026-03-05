@@ -113,9 +113,13 @@ const PrizeCard = ({ premio, userLikes, onResgatar, isRescuing }: {
         )}
         <div className="flex items-center justify-between mt-auto pt-2">
           <div>
-            <p className={cn("font-cinzel font-bold text-base", canAfford ? "text-primary" : "text-destructive")}>
-              {premio.likes_custo.toLocaleString()} likes
-            </p>
+            {isFinalistOnly ? (
+              <p className="font-cinzel font-bold text-base text-primary">GRÁTIS p/ Finalista</p>
+            ) : (
+              <p className={cn("font-cinzel font-bold text-base", canAfford ? "text-primary" : "text-destructive")}>
+                {premio.likes_custo.toLocaleString()} likes
+              </p>
+            )}
             <p className={cn("text-xs", lowStock && premio.estoque > 0 ? "text-accent-foreground" : "text-muted-foreground")}>
               Estoque: {premio.estoque}
             </p>

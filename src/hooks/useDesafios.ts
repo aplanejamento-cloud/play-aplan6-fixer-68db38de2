@@ -150,7 +150,7 @@ export function useDesafios() {
       .eq("id", desafioId);
 
     if (!error) {
-      // Create a normal post from the approved desafio
+      // Create a normal post from the approved desafio with coroinha + raio
       if (desafio) {
         const mainImage = desafio.image_urls?.[0] || null;
         const { data: newPost } = await supabase.from("posts").insert({
@@ -159,6 +159,8 @@ export function useDesafios() {
           image_url: mainImage,
           video_url: desafio.video_url || null,
           tipo: "normal",
+          coroinha: true,
+          raio: true,
           expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         } as any).select().single();
 

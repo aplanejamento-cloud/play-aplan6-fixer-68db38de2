@@ -182,24 +182,34 @@ const AdminDoacoesPanel = () => {
 
                   {/* Actions */}
                   {!d.aprovado && (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        className="flex-1 bg-green-600 hover:bg-green-700"
-                        onClick={() => handleAprovar(d)}
-                        disabled={aprovar.isPending}
-                      >
-                        <CheckCircle className="w-4 h-4 mr-1" /> Aprovar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="flex-1"
-                        onClick={() => handleRecusar(d.id)}
-                        disabled={recusar.isPending}
-                      >
-                        <XCircle className="w-4 h-4 mr-1" /> Recusar
-                      </Button>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id={`finalista-${d.id}`}
+                          checked={finalistaFlags[d.id] || false}
+                          onCheckedChange={(checked) => setFinalistaFlags(prev => ({ ...prev, [d.id]: !!checked }))}
+                        />
+                        <label htmlFor={`finalista-${d.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                          🏆 Somente Finalistas (sem custo de likes)
+                        </label>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                          onClick={() => handleAprovar(d)}
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" /> Aprovar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="flex-1"
+                          onClick={() => handleRecusar(d.id)}
+                        >
+                          <XCircle className="w-4 h-4 mr-1" /> Recusar
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>

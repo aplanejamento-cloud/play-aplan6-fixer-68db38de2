@@ -164,7 +164,7 @@ const DonationForm = () => {
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="1">🏆 Prêmios Maiores</SelectItem>
-            <SelectItem value="2">📍 Retirada Doador</SelectItem>
+            <SelectItem value="2">📍 Retirada Local Doador</SelectItem>
           </SelectContent>
         </Select>
       </div>
