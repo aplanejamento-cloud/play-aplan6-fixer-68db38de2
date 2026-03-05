@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useRef } from "react";
-import { Home, User, Flame, Swords, Trophy, Gift, MessageSquare, BookOpen, HelpCircle, DollarSign, Download, Gavel, Paintbrush, Crown, BarChart3, Bot, Star, Skull } from "lucide-react";
+import { Home, User, Flame, Swords, Trophy, Gift, MessageSquare, BookOpen, HelpCircle, DollarSign, Download, Gavel, Paintbrush, Crown, BarChart3, Bot, Star, Skull, LifeBuoy } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,6 +37,7 @@ const GlobalNav = () => {
     { path: "/chats", label: "Chats", icon: MessageSquare, requiresGame: true, requiresAuth: true },
     { path: "/regras", label: "Regras", icon: BookOpen, requiresGame: false, requiresAuth: true },
     { path: "/ajuda", label: "Ajuda", icon: HelpCircle, requiresGame: false, requiresAuth: true },
+    { path: "/sos-ajuda", label: "SOS", icon: LifeBuoy, requiresGame: false, requiresAuth: true },
     { path: "/comprar-likes", label: "Loja", icon: DollarSign, requiresGame: true, requiresAuth: true },
     { path: "/downloads", label: "Downloads", icon: Download, requiresGame: false, requiresAuth: true },
     { path: "/eliminados", label: "Eliminados", icon: Skull, requiresGame: false, requiresAuth: false },

@@ -18,11 +18,16 @@ export function useSosPendingCount() {
   return useQuery({
     queryKey: ["sos-pending-count"],
     queryFn: async () => {
-      const { count } = await supabase
-        .from("sos_ajuda" as any)
-        .select("*", { count: "exact", head: true })
-        .eq("status", "pendente");
-      return count || 0;
+      try {
+        const { count, error } = await supabase
+          .from("sos_ajuda" as any)
+          .select("*", { count: "exact", head: true })
+          .eq("status", "pendente");
+        if (error) return 0;
+        return count || 0;
+      } catch {
+        return 0;
+      }
     },
     refetchInterval: 30000,
   });
@@ -36,7 +41,7 @@ export function useSosRequests() {
         .from("sos_ajuda" as any)
         .select("*")
         .order("created_at", { ascending: false });
-      if (error) throw error;
+      if (error) return [] as SosRequest[];
 
       const userIds = [...new Set((data || []).map((d: any) => d.user_id))];
       const { data: profiles } = await supabase
