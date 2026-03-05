@@ -171,12 +171,16 @@ const Profile = () => {
     setUploading(false);
   };
 
+  const [videoUploading, setVideoUploading] = useState(false);
+
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 100 * 1024 * 1024) { toast.error("Máximo 100MB!"); return; }
     setUploading(true);
+    setVideoUploading(true);
     await uploadMedia(file, "video");
+    setVideoUploading(false);
     setUploading(false);
   };
 
