@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useDoacoesPendentes, useAprovarDoacao, useRecusarDoacao, DoacaoPremioPendente } from "@/hooks/usePremios";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Gift, ChevronDown, ChevronUp, CheckCircle, XCircle, Clock, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -57,15 +58,43 @@ const AdminDoacoesPanel = () => {
     return () => { supabase.removeChannel(ch); };
   }, [queryClient]);
 
+  const [finalistaFlags, setFinalistaFlags] = useState<Record<string, boolean>>({});
+
   const handleAprovar = async (doacao: DoacaoPremioPendente) => {
     try {
-      await aprovar.mutateAsync(doacao);
-      // Update ultima_doacao on the donor's profile
+      const isFinalistaOnly = finalistaFlags[doacao.id] || false;
+      // Override the mutation to include finalist_only
+      const { error: pErr } = await supabase.from("premios").insert({
+        tipo_prateleira: doacao.tipo_prateleira,
+        midia_url: doacao.midia_url,
+        titulo: doacao.titulo,
+        descricao: doacao.descricao,
+        likes_custo: doacao.likes_recebidos,
+        estoque: doacao.quantidade || 1,
+        aprovado: true,
+        quantidade: doacao.quantidade || 1,
+        estado: doacao.estado,
+        cidade: doacao.cidade,
+        bairro: doacao.bairro,
+        endereco: doacao.endereco,
+        numero: doacao.numero,
+        complemento: doacao.complemento,
+        finalist_only: isFinalistaOnly,
+      } as any);
+      if (pErr) throw pErr;
+      const { data: profile } = await supabase.from("profiles").select("total_likes").eq("user_id", doacao.usuario_id).single();
+      if (profile) {
+        await supabase.from("profiles").update({ total_likes: (profile as any).total_likes + doacao.likes_recebidos }).eq("user_id", doacao.usuario_id);
+      }
+      await supabase.from("doacoes_premios").update({ aprovado: true }).eq("id", doacao.id);
       await supabase
         .from("profiles")
         .update({ ultima_doacao: new Date().toISOString() } as any)
         .eq("user_id", doacao.usuario_id);
-      toast.success(`✅ Doação aprovada! Likes creditados ao doador.`);
+      queryClient.invalidateQueries({ queryKey: ["doacoes_pendentes"] });
+      queryClient.invalidateQueries({ queryKey: ["doacoes-todas-admin"] });
+      queryClient.invalidateQueries({ queryKey: ["premios"] });
+      toast.success(`✅ Doação aprovada${isFinalistaOnly ? " (Somente Finalistas)" : ""}! Likes creditados.`);
     } catch {
       toast.error("Erro ao aprovar");
     }
@@ -153,24 +182,34 @@ const AdminDoacoesPanel = () => {
 
                   {/* Actions */}
                   {!d.aprovado && (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        className="flex-1 bg-green-600 hover:bg-green-700"
-                        onClick={() => handleAprovar(d)}
-                        disabled={aprovar.isPending}
-                      >
-                        <CheckCircle className="w-4 h-4 mr-1" /> Aprovar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="flex-1"
-                        onClick={() => handleRecusar(d.id)}
-                        disabled={recusar.isPending}
-                      >
-                        <XCircle className="w-4 h-4 mr-1" /> Recusar
-                      </Button>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id={`finalista-${d.id}`}
+                          checked={finalistaFlags[d.id] || false}
+                          onCheckedChange={(checked) => setFinalistaFlags(prev => ({ ...prev, [d.id]: !!checked }))}
+                        />
+                        <label htmlFor={`finalista-${d.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                          🏆 Somente Finalistas (sem custo de likes)
+                        </label>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                          onClick={() => handleAprovar(d)}
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" /> Aprovar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="flex-1"
+                          onClick={() => handleRecusar(d.id)}
+                        >
+                          <XCircle className="w-4 h-4 mr-1" /> Recusar
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>

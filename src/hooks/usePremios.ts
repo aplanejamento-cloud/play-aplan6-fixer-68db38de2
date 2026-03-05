@@ -19,6 +19,7 @@ export interface Premio {
   endereco: string | null;
   numero: string | null;
   complemento: string | null;
+  finalist_only?: boolean;
 }
 
 export interface DoacaoPremioPendente {

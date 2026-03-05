@@ -68,8 +68,9 @@ const VideoPlayer = ({ src, className }: { src: string; className?: string }) =>
 const PrizeCard = ({ premio, userLikes, onResgatar, isRescuing }: {
   premio: Premio; userLikes: number; onResgatar: (p: Premio) => void; isRescuing: boolean;
 }) => {
-  const canAfford = userLikes >= premio.likes_custo;
-  const wouldEliminate = userLikes > 0 && userLikes - premio.likes_custo <= 0;
+  const isFinalistOnly = !!(premio as any).finalist_only;
+  const canAfford = isFinalistOnly || userLikes >= premio.likes_custo;
+  const wouldEliminate = !isFinalistOnly && userLikes > 0 && userLikes - premio.likes_custo <= 0;
   const lowStock = premio.estoque < 5;
   const enderecoCompleto = [premio.endereco, premio.numero, premio.bairro, premio.cidade, premio.estado].filter(Boolean).join(", ");
 
@@ -99,6 +100,9 @@ const PrizeCard = ({ premio, userLikes, onResgatar, isRescuing }: {
         )}
       </div>
       <div className="flex-1 p-4 flex flex-col gap-2">
+        {isFinalistOnly && (
+          <Badge className="bg-accent text-accent-foreground text-xs mb-1">🏆 Somente Para Finalista</Badge>
+        )}
         {premio.titulo && <h3 className="font-montserrat font-bold text-foreground text-sm line-clamp-2">{premio.titulo}</h3>}
         {premio.descricao && <p className="text-xs text-muted-foreground line-clamp-2">{premio.descricao}</p>}
         {premio.quantidade > 1 && <p className="text-xs text-muted-foreground">Qtd: {premio.quantidade} unidades</p>}
@@ -109,9 +113,13 @@ const PrizeCard = ({ premio, userLikes, onResgatar, isRescuing }: {
         )}
         <div className="flex items-center justify-between mt-auto pt-2">
           <div>
-            <p className={cn("font-cinzel font-bold text-base", canAfford ? "text-primary" : "text-destructive")}>
-              {premio.likes_custo.toLocaleString()} likes
-            </p>
+            {isFinalistOnly ? (
+              <p className="font-cinzel font-bold text-base text-primary">GRÁTIS p/ Finalista</p>
+            ) : (
+              <p className={cn("font-cinzel font-bold text-base", canAfford ? "text-primary" : "text-destructive")}>
+                {premio.likes_custo.toLocaleString()} likes
+              </p>
+            )}
             <p className={cn("text-xs", lowStock && premio.estoque > 0 ? "text-accent-foreground" : "text-muted-foreground")}>
               Estoque: {premio.estoque}
             </p>
