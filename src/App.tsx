@@ -130,7 +130,7 @@ const AppContent = () => {
         <Route path="/desafios-juiz" element={<ProtectedRoute><DesafiosJuiz /></ProtectedRoute>} />
         <Route path="/editor" element={<ProtectedRoute><Editor /></ProtectedRoute>} />
 
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<CatchAllRoute />} />
       </Routes>
       {/* Daily report modal - shows at 22h+ */}
       {user && <DailyReportModal />}
