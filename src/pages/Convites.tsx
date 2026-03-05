@@ -60,7 +60,8 @@ const Convites = () => {
 
   const hasPosted = postsCount >= 1;
 
-  const referralLink = `${window.location.origin}/?ref=${user?.id?.slice(0, 8)}`;
+  const PROD_URL = "https://playlike.lovable.app";
+  const referralLink = `${PROD_URL}/?ref=${user?.id?.slice(0, 8)}`;
 
   const getShareText = () =>
     `Você não vai acreditar, lançaram uma Rede Social dos Famosos chamada Playlike, onde as pessoas publicam fotos e vídeos em troca de likes e estes likes podem ser trocados por prêmios cadastrados na página.\n\nE ainda vão eleger o melhor influenciador do Brasil.\n\nEu já me cadastrei e estou esperando a Rede Iniciar.\n\nSó pode se cadastrar agora quem recebe convite, porque o jogo ainda não iniciou e a rede está fechada para convidados.\n\nTe mandei o link abaixo para você conseguir se cadastrar também e aguardar o jogo começar\n\n🔥 Convide Playlike app! Cadastre-se grátis: ${referralLink}`;
