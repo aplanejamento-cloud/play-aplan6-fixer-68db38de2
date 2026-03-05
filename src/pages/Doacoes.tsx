@@ -94,7 +94,15 @@ const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: 
         .update({ likes_transferidos: true, status: "retirado" } as any)
         .eq("id", resgate.id);
 
-      // Decrement stock
+      // Decrement stock now that doador verified
+      const premioId = (resgate as any).premio_id;
+      if (premioId) {
+        const { data: premio } = await supabase.from("premios").select("estoque").eq("id", premioId).single();
+        if (premio) {
+          await supabase.from("premios").update({ estoque: Math.max(0, (premio as any).estoque - 1) }).eq("id", premioId);
+        }
+      }
+
       await supabase.from("doacoes_premios")
         .update({ verified_by_doador: true } as any)
         .eq("id", doacaoId);
@@ -222,7 +230,12 @@ const DonationForm = () => {
       </div>
 
       <Input placeholder="Título do prêmio (opcional)" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
-      <Input placeholder="WhatsApp para contato *" type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className={!whatsapp.trim() ? "border-destructive/50" : ""} />
+      <div>
+        <Input placeholder="WhatsApp (11 99999-9999) *" type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className={whatsapp && !/^\d{2}\s?9?\d{4}-?\d{4}$/.test(whatsapp) ? "border-destructive" : !whatsapp.trim() ? "border-destructive/50" : ""} />
+        {whatsapp && !/^\d{2}\s?9?\d{4}-?\d{4}$/.test(whatsapp) && (
+          <p className="text-xs text-destructive mt-1">WhatsApp inválido (ex: 11 99999-9999)</p>
+        )}
+      </div>
       <Input placeholder="Descrição (opcional)" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
 
       <div className="flex gap-3">
@@ -266,7 +279,7 @@ const DonationForm = () => {
 
       <Button
         className="w-full font-cinzel font-bold"
-        disabled={!selectedFile || !whatsapp.trim() || doarMutation.isPending || uploading}
+        disabled={!selectedFile || !whatsapp.trim() || !/^\d{2}\s?9?\d{4}-?\d{4}$/.test(whatsapp) || doarMutation.isPending || uploading}
         onClick={() => doarMutation.mutate()}
       >
         {doarMutation.isPending || uploading ? (
