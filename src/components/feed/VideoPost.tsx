@@ -45,7 +45,6 @@ const VideoPost = ({ src }: VideoPostProps) => {
       <video
         ref={videoRef}
         src={src}
-        loop
         muted={muted}
         playsInline
         preload="metadata"
