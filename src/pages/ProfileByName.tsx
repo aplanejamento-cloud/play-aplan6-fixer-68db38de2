@@ -14,7 +14,9 @@ const normalizeUsername = (name: string) =>
   name.toLowerCase().replace(/\s+/g, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 const ProfileByName = () => {
-  const { username } = useParams<{ username: string }>();
+  const params = useParams<{ username: string }>();
+  // Support both /@:username route param and direct /@username path
+  const username = params.username || window.location.pathname.replace(/^\/@/, '');
   const { user } = useAuth();
   const navigate = useNavigate();
   const { following } = useFollows();
