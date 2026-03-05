@@ -58,15 +58,43 @@ const AdminDoacoesPanel = () => {
     return () => { supabase.removeChannel(ch); };
   }, [queryClient]);
 
+  const [finalistaFlags, setFinalistaFlags] = useState<Record<string, boolean>>({});
+
   const handleAprovar = async (doacao: DoacaoPremioPendente) => {
     try {
-      await aprovar.mutateAsync(doacao);
-      // Update ultima_doacao on the donor's profile
+      const isFinalistaOnly = finalistaFlags[doacao.id] || false;
+      // Override the mutation to include finalist_only
+      const { error: pErr } = await supabase.from("premios").insert({
+        tipo_prateleira: doacao.tipo_prateleira,
+        midia_url: doacao.midia_url,
+        titulo: doacao.titulo,
+        descricao: doacao.descricao,
+        likes_custo: doacao.likes_recebidos,
+        estoque: doacao.quantidade || 1,
+        aprovado: true,
+        quantidade: doacao.quantidade || 1,
+        estado: doacao.estado,
+        cidade: doacao.cidade,
+        bairro: doacao.bairro,
+        endereco: doacao.endereco,
+        numero: doacao.numero,
+        complemento: doacao.complemento,
+        finalist_only: isFinalistaOnly,
+      } as any);
+      if (pErr) throw pErr;
+      const { data: profile } = await supabase.from("profiles").select("total_likes").eq("user_id", doacao.usuario_id).single();
+      if (profile) {
+        await supabase.from("profiles").update({ total_likes: (profile as any).total_likes + doacao.likes_recebidos }).eq("user_id", doacao.usuario_id);
+      }
+      await supabase.from("doacoes_premios").update({ aprovado: true }).eq("id", doacao.id);
       await supabase
         .from("profiles")
         .update({ ultima_doacao: new Date().toISOString() } as any)
         .eq("user_id", doacao.usuario_id);
-      toast.success(`✅ Doação aprovada! Likes creditados ao doador.`);
+      queryClient.invalidateQueries({ queryKey: ["doacoes_pendentes"] });
+      queryClient.invalidateQueries({ queryKey: ["doacoes-todas-admin"] });
+      queryClient.invalidateQueries({ queryKey: ["premios"] });
+      toast.success(`✅ Doação aprovada${isFinalistaOnly ? " (Somente Finalistas)" : ""}! Likes creditados.`);
     } catch {
       toast.error("Erro ao aprovar");
     }
