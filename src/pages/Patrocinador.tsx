@@ -10,7 +10,7 @@ import { Crown, MessageCircle, TrendingUp, Users, Heart, Save, Loader2 } from "l
 import { toast } from "sonner";
 
 const Patrocinador = () => {
-  const isAdmin = useIsAdmin();
+  const { isAdmin } = useIsAdmin();
 
   const { data: patrocinio } = useQuery({
     queryKey: ["patrocinio-whatsapp"],

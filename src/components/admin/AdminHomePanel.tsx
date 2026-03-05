@@ -110,6 +110,13 @@ const AdminHomePanel = () => {
       {expanded && (
         <div className="px-4 pb-4 space-y-6">
 
+          {/* SOS Badge */}
+          {sosPending > 0 && (
+            <Button variant="destructive" onClick={() => navigate('/sos-ajuda')} className="w-full animate-pulse">
+              🚨 {sosPending} SOS pendente{sosPending > 1 ? 's' : ''}
+            </Button>
+          )}
+
           {/* Exit Admin Button */}
           <Button variant="destructive" onClick={handleExitAdmin} className="w-full">
             <LogOut className="h-4 w-4 mr-2" /> Sair do Admin
