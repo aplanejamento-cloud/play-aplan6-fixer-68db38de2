@@ -68,8 +68,9 @@ const VideoPlayer = ({ src, className }: { src: string; className?: string }) =>
 const PrizeCard = ({ premio, userLikes, onResgatar, isRescuing }: {
   premio: Premio; userLikes: number; onResgatar: (p: Premio) => void; isRescuing: boolean;
 }) => {
-  const canAfford = userLikes >= premio.likes_custo;
-  const wouldEliminate = userLikes > 0 && userLikes - premio.likes_custo <= 0;
+  const isFinalistOnly = !!(premio as any).finalist_only;
+  const canAfford = isFinalistOnly || userLikes >= premio.likes_custo;
+  const wouldEliminate = !isFinalistOnly && userLikes > 0 && userLikes - premio.likes_custo <= 0;
   const lowStock = premio.estoque < 5;
   const enderecoCompleto = [premio.endereco, premio.numero, premio.bairro, premio.cidade, premio.estado].filter(Boolean).join(", ");
 
