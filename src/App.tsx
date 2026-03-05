@@ -79,10 +79,10 @@ const AuthProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const UsernameRedirect = () => {
-  const path = window.location.pathname.slice(1);
-  if (path.startsWith('@')) {
-    const username = path.slice(1);
+const CatchAllRoute = () => {
+  const path = window.location.pathname;
+  // Handle /@username paths
+  if (path.startsWith('/@')) {
     return <ProfileByName />;
   }
   return <NotFound />;
@@ -130,7 +130,7 @@ const AppContent = () => {
         <Route path="/desafios-juiz" element={<ProtectedRoute><DesafiosJuiz /></ProtectedRoute>} />
         <Route path="/editor" element={<ProtectedRoute><Editor /></ProtectedRoute>} />
 
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<CatchAllRoute />} />
       </Routes>
       {/* Daily report modal - shows at 22h+ */}
       {user && <DailyReportModal />}

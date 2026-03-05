@@ -14,7 +14,9 @@ const normalizeUsername = (name: string) =>
   name.toLowerCase().replace(/\s+/g, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 const ProfileByName = () => {
-  const { username } = useParams<{ username: string }>();
+  const params = useParams<{ username: string }>();
+  // Support both /@:username route param and direct /@username path
+  const username = params.username || window.location.pathname.replace(/^\/@/, '');
   const { user } = useAuth();
   const navigate = useNavigate();
   const { following } = useFollows();
@@ -25,14 +27,22 @@ const ProfileByName = () => {
     queryFn: async () => {
       if (!username) return null;
       const target = normalizeUsername(username);
-      // Busca eficiente: filtra com ilike no banco usando o username normalizado
+      // Try exact ilike first with spaces restored from hyphens
+      const nameWithSpaces = username.replace(/-/g, " ");
       const { data } = await supabase
         .from("profiles")
         .select("*")
-        .ilike("name", username.replace(/-/g, " ") + "%");
-      if (!data) return null;
-      // Fallback de normalização local para garantir match exato
-      return data.find((p) => normalizeUsername(p.name) === target) || null;
+        .ilike("name", `%${nameWithSpaces}%`);
+      if (data && data.length > 0) {
+        const match = data.find((p) => normalizeUsername(p.name) === target);
+        if (match) return match;
+      }
+      // Fallback: fetch all profiles and normalize-match (handles no-space usernames like "gustavoreis")
+      const { data: allData } = await supabase
+        .from("profiles")
+        .select("*");
+      if (!allData) return null;
+      return allData.find((p) => normalizeUsername(p.name) === target) || null;
     },
     enabled: !!username,
   });
