@@ -163,14 +163,29 @@ const Profile = () => {
     toast.success("Avatar atualizado!");
   }, [user, refreshProfile]);
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [photoCropSrc, setPhotoCropSrc] = useState<string | null>(null);
+  const [showPhotoCrop, setShowPhotoCrop] = useState(false);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { toast.error("Máximo 5MB!"); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPhotoCropSrc(reader.result as string);
+      setShowPhotoCrop(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handlePhotoCropComplete = useCallback(async (blob: Blob) => {
+    setShowPhotoCrop(false);
     setUploading(true);
+    const file = new File([blob], `photo-${Date.now()}.jpg`, { type: "image/jpeg" });
     await uploadMedia(file, "photo");
     setUploading(false);
-  };
+  }, [uploadMedia]);
 
   const [videoUploading, setVideoUploading] = useState(false);
 
@@ -633,6 +648,16 @@ const Profile = () => {
             onOpenChange={setShowCropDialog}
             imageSrc={cropImageSrc}
             onCropComplete={handleCropComplete}
+          />
+        )}
+
+        {/* Photo Crop Dialog */}
+        {photoCropSrc && (
+          <AvatarCropDialog
+            open={showPhotoCrop}
+            onOpenChange={setShowPhotoCrop}
+            imageSrc={photoCropSrc}
+            onCropComplete={handlePhotoCropComplete}
           />
         )}
 

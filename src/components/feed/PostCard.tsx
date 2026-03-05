@@ -138,9 +138,19 @@ const PostCard = ({ post }: PostCardProps) => {
           </div>
         </header>
 
-        {post.content && (
+      {post.content && (
           <div className="mt-2">
-            <p className="text-foreground whitespace-pre-wrap break-words">{post.content}</p>
+            <p className="text-foreground whitespace-pre-wrap break-words">
+              {post.content.split(/(\s+)/).map((word, i) => {
+                if (/https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(word)) {
+                  return <span key={i} className="text-muted-foreground cursor-not-allowed">[link YouTube bloqueado]</span>;
+                }
+                if (/https?:\/\/\S+/i.test(word)) {
+                  return <span key={i} className="text-muted-foreground">{word}</span>;
+                }
+                return word;
+              })}
+            </p>
             {extractYouTubeId(post.content) && (
               <div className="mt-2">
                 <YouTubeEmbed url={post.content} />
