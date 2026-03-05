@@ -117,7 +117,7 @@ const Profile = () => {
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
   const [showCropDialog, setShowCropDialog] = useState(false);
   const [showAvatarZoom, setShowAvatarZoom] = useState(false);
-  const [showEmail, setShowEmail] = useState(true);
+  const [showEmail, setShowEmail] = useState((profile as any)?.show_email_public ?? false);
 
   const { following } = useFollows();
   const toggleFollow = useToggleFollow();
@@ -335,14 +335,14 @@ const Profile = () => {
           </Card>
         )}
 
-        {/* Email Toggle */}
+        {/* Email Toggle - owner can toggle, visitors see if enabled */}
         {isOwnProfile && user?.email && (
           <Card className="bg-card/80 border-border">
             <CardContent className="py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-accent" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Email</p>
+                  <p className="text-xs text-muted-foreground">Email público</p>
                   {showEmail ? (
                     <p className="text-sm text-foreground">{user.email}</p>
                   ) : (
@@ -354,8 +354,25 @@ const Profile = () => {
                 <span className="text-xs text-muted-foreground">{showEmail ? "Visível" : "Oculto"}</span>
                 <Switch
                   checked={showEmail}
-                  onCheckedChange={(val) => setShowEmail(val)}
+                  onCheckedChange={async (val) => {
+                    setShowEmail(val);
+                    if (user) {
+                      await supabase.from("profiles").update({ show_email_public: val } as any).eq("user_id", user.id);
+                    }
+                  }}
                 />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        {/* Show email to visitors when enabled */}
+        {!isOwnProfile && (viewedProfile as any)?.show_email_public && (
+          <Card className="bg-card/80 border-border">
+            <CardContent className="py-4 flex items-center gap-3">
+              <Mail className="w-5 h-5 text-accent" />
+              <div>
+                <p className="text-xs text-muted-foreground">Email</p>
+                <p className="text-sm text-foreground">{(viewedProfile as any)?.email || "—"}</p>
               </div>
             </CardContent>
           </Card>

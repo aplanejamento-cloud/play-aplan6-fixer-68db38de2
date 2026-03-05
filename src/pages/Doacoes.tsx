@@ -89,10 +89,12 @@ const DonationForm = () => {
   const [endereco, setEndereco] = useState("");
   const [numero, setNumero] = useState("");
   const [complemento, setComplemento] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
 
   const doarMutation = useMutation({
     mutationFn: async () => {
       if (!user || !selectedFile) throw new Error("Arquivo obrigatório");
+      if (!whatsapp.trim()) throw new Error("WhatsApp é obrigatório");
       const url = await upload(selectedFile);
       if (!url) throw new Error("Falha no upload");
       const { error } = await supabase.from("doacoes_premios").insert({
@@ -106,7 +108,7 @@ const DonationForm = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["minhas_doacoes", user?.id] });
       setTitulo(""); setDescricao(""); setLikesRecebidos(100); setQuantidade(1);
-      setPreviewUrl(null); setSelectedFile(null);
+      setPreviewUrl(null); setSelectedFile(null); setWhatsapp("");
       setEstado(""); setCidade(""); setBairro(""); setEndereco(""); setNumero(""); setComplemento("");
       toast.success("🎁 Doação enviada! Aguardando aprovação do admin.");
     },
@@ -142,6 +144,7 @@ const DonationForm = () => {
       </div>
 
       <Input placeholder="Título do prêmio (opcional)" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
+      <Input placeholder="WhatsApp para contato *" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className={!whatsapp.trim() ? "border-destructive/50" : ""} />
       <Input placeholder="Descrição (opcional)" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
 
       <div className="flex gap-3">
@@ -181,11 +184,11 @@ const DonationForm = () => {
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground italic">💡 Receba likes por cada produto doado!</p>
+      <p className="text-xs text-muted-foreground italic">💡 Doe prêmio → receba likes quando aprovado e quando entregue!</p>
 
       <Button
         className="w-full font-cinzel font-bold"
-        disabled={!selectedFile || doarMutation.isPending || uploading}
+        disabled={!selectedFile || !whatsapp.trim() || doarMutation.isPending || uploading}
         onClick={() => doarMutation.mutate()}
       >
         {doarMutation.isPending || uploading ? (
