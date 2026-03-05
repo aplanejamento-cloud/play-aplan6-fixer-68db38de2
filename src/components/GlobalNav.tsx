@@ -6,6 +6,12 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGameState } from "@/hooks/useGameState";
 
+const loggedOutItems = [
+  { path: "/", label: "🏠 Home", icon: Home },
+  { path: "/patrocinador", label: "👑 Patrocínio", icon: Crown },
+  { path: "/eliminados", label: "⚰️ Eliminados", icon: Skull },
+];
+
 const GlobalNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,7 +45,7 @@ const GlobalNav = () => {
   ];
 
   const visibleItems = !user
-    ? allItems.filter((item) => !item.requiresAuth && !item.requiresGame && !(item as any).requiresAdmin)
+    ? loggedOutItems
     : allItems.filter((item) => {
         if (item.requiresGame && !gameOn) return false;
         if ((item as any).requiresAdmin && !isAdmin) return false;

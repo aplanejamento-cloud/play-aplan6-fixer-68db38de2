@@ -503,6 +503,21 @@ const Profile = () => {
           </div>
         )}
 
+        {/* Juiz Publish Section */}
+        {isOwnProfile && profile?.user_type === "juiz" && gameState?.game_on && (
+          <Card className="bg-card/80 border-primary/30">
+            <CardContent className="py-4 space-y-3">
+              <h3 className="font-cinzel text-lg text-primary text-center flex items-center justify-center gap-2">
+                ⚔️ Publicar <span className="text-sm text-muted-foreground">({3 - ((profile as any)?.daily_posts || 0)}/3 hoje)</span>
+              </h3>
+              <p className="text-xs text-muted-foreground text-center">
+                Juízes podem publicar até 3 vezes por dia durante o jogo.
+              </p>
+              <CreatePostForm />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Own Posts (juízes: desafios pagos + posts; jogadores: posts) */}
         {ownPosts.length > 0 && (
           <div className="space-y-4">
