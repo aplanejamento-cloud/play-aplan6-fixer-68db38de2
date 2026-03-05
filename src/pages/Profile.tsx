@@ -438,7 +438,12 @@ const Profile = () => {
                 </Button>
                 <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoUpload} />
               </div>
-              {videos.length > 0 ? (
+              {videoUploading ? (
+                <div className="flex flex-col items-center justify-center py-8 gap-2">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">Enviando vídeo... Aguarde</p>
+                </div>
+              ) : videos.length > 0 ? (
                 <div className="relative">
                   <video src={videos[0].media_url} controls className="w-full rounded-lg max-h-80" />
                   <button onClick={() => deleteMedia(videos[0].id)} className="absolute top-2 right-2 bg-destructive/80 rounded-full p-1.5"><Trash2 className="w-4 h-4 text-destructive-foreground" /></button>

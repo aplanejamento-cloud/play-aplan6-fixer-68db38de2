@@ -15,29 +15,93 @@ import { Upload, Loader2, Clock, CheckCircle2, Lock, Image as ImageIcon, MapPin,
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-// ─── Donor Ticket Verification ────────────────────────────
-const TicketVerifier = ({ doacaoId }: { doacaoId: string }) => {
+// ─── Donor Ticket Verification with Likes Transfer ────────
+const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: string; doacaoUserId: string; likesRecebidos: number }) => {
   const { user } = useAuth();
   const [code, setCode] = useState("");
   const [verifying, setVerifying] = useState(false);
-  const [result, setResult] = useState<{ success: boolean; message: string; usuario_nome?: string } | null>(null);
+  const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
+  const qc = useQueryClient();
 
   const handleVerify = async () => {
     if (code.length !== 6) { toast.error("Digite o código de 6 dígitos"); return; }
     setVerifying(true);
     setResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke("verify-ticket", {
-        body: { codigo_ticket: code, doador_id: user?.id },
-      });
-      if (error) throw error;
-      if (data?.success) {
-        setResult({ success: true, message: data.message, usuario_nome: data.usuario_nome });
-        toast.success(`✅ Entregue para ${data.usuario_nome}!`);
-      } else {
-        setResult({ success: false, message: data?.error || "Ticket inválido" });
-        toast.error(data?.error || "Ticket inválido");
+      // Find resgate by ticket code
+      const { data: resgate, error: rErr } = await supabase
+        .from("resgates")
+        .select("*")
+        .eq("senha_unica" as any, code)
+        .maybeSingle();
+
+      if (rErr || !resgate) {
+        setResult({ success: false, message: "Senha inválida" });
+        toast.error("Senha inválida");
+        setVerifying(false);
+        return;
       }
+
+      if ((resgate as any).likes_transferidos) {
+        setResult({ success: false, message: "Já transferido anteriormente" });
+        toast.error("Já transferido");
+        setVerifying(false);
+        return;
+      }
+
+      const claimedUserId = (resgate as any).claimed_by_user_id || resgate.user_id;
+      const likesGastos = (resgate as any).likes_gastos || likesRecebidos;
+
+      // Check claimed user has enough likes
+      const { data: claimedUser } = await supabase
+        .from("profiles")
+        .select("total_likes, user_id")
+        .eq("user_id", claimedUserId)
+        .single();
+
+      if (!claimedUser || (claimedUser as any).total_likes < likesGastos) {
+        setResult({ success: false, message: "Usuário sem likes suficientes" });
+        toast.error("Usuário sem likes suficientes");
+        setVerifying(false);
+        return;
+      }
+
+      // Get doador profile
+      const { data: doador } = await supabase
+        .from("profiles")
+        .select("total_likes, user_id")
+        .eq("user_id", doacaoUserId)
+        .single();
+
+      if (!doador) {
+        setResult({ success: false, message: "Doador não encontrado" });
+        setVerifying(false);
+        return;
+      }
+
+      // Transfer likes: user -> doador
+      await supabase.from("profiles")
+        .update({ total_likes: (doador as any).total_likes + likesGastos })
+        .eq("user_id", doacaoUserId);
+
+      await supabase.from("profiles")
+        .update({ total_likes: (claimedUser as any).total_likes - likesGastos })
+        .eq("user_id", claimedUserId);
+
+      // Mark resgate as transferred
+      await supabase.from("resgates")
+        .update({ likes_transferidos: true, status: "retirado" } as any)
+        .eq("id", resgate.id);
+
+      // Decrement stock
+      await supabase.from("doacoes_premios")
+        .update({ verified_by_doador: true } as any)
+        .eq("id", doacaoId);
+
+      qc.invalidateQueries({ queryKey: ["minhas_doacoes"] });
+      qc.invalidateQueries({ queryKey: ["premios"] });
+      setResult({ success: true, message: `✅ Likes transferidos! +${likesGastos} likes para você.` });
+      toast.success(`✅ Likes transferidos! Estoque -1`);
     } catch (e: any) {
       setResult({ success: false, message: e.message || "Erro ao verificar" });
       toast.error("Erro ao verificar ticket");
@@ -62,7 +126,9 @@ const TicketVerifier = ({ doacaoId }: { doacaoId: string }) => {
       {result && (
         <p className={cn("text-xs font-medium", result.success ? "text-green-500" : "text-destructive")}>
           {result.message}
-          {!result.success && <span className="block text-destructive font-bold mt-1">⚠️ NÃO entregue o produto!</span>}
+          {!result.success && result.message !== "Já transferido anteriormente" && (
+            <span className="block text-destructive font-bold mt-1">⚠️ NÃO entregue o produto!</span>
+          )}
         </p>
       )}
     </div>
@@ -90,6 +156,7 @@ const DonationForm = () => {
   const [numero, setNumero] = useState("");
   const [complemento, setComplemento] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [videoUploading, setVideoUploading] = useState(false);
 
   const doarMutation = useMutation({
     mutationFn: async () => {
@@ -118,8 +185,12 @@ const DonationForm = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
+    if (f.type.startsWith("video/")) setVideoUploading(true);
     setSelectedFile(f);
     setPreviewUrl(URL.createObjectURL(f));
+    if (f.type.startsWith("video/")) {
+      setTimeout(() => setVideoUploading(false), 500);
+    }
   };
 
   return (
@@ -128,7 +199,12 @@ const DonationForm = () => {
         onClick={() => fileRef.current?.click()}
         className="border-2 border-dashed border-border rounded-xl h-48 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors relative overflow-hidden"
       >
-        {previewUrl ? (
+        {videoUploading ? (
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Enviando vídeo... Aguarde</p>
+          </div>
+        ) : previewUrl ? (
           selectedFile?.type.startsWith("video/") ? (
             <video src={previewUrl} className="w-full h-full object-cover" muted />
           ) : (
@@ -184,7 +260,7 @@ const DonationForm = () => {
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground italic">💡 Doe prêmio → receba likes quando aprovado e quando entregue!</p>
+      <p className="text-xs text-muted-foreground italic">💡 Doe prêmio → receba likes quando aprovado e quando entregue ao usuário!</p>
 
       <Button
         className="w-full font-cinzel font-bold"
@@ -264,13 +340,12 @@ const Doacoes = () => {
                     )}
                   </div>
 
-                  {/* Ticket verification for approved donations */}
                   {isApproved && (
                     <div className="border-t border-border pt-2 space-y-2">
                       <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                         <Ticket className="w-3 h-3" /> Verificar senha do usuário para entrega:
                       </p>
-                      <TicketVerifier doacaoId={d.id} />
+                      <TicketVerifier doacaoId={d.id} doacaoUserId={d.usuario_id} likesRecebidos={d.likes_recebidos} />
                       <Button
                         variant="outline"
                         size="sm"
@@ -278,7 +353,6 @@ const Doacoes = () => {
                         onClick={async () => {
                           if (!confirm("Remover este prêmio da prateleira?")) return;
                           await supabase.from("doacoes_premios").delete().eq("id", d.id);
-                          // Also remove from premios if exists
                           if (d.titulo) {
                             await supabase.from("premios").delete().eq("titulo", d.titulo).eq("midia_url", d.midia_url);
                           }
