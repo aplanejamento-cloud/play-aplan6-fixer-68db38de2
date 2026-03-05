@@ -110,6 +110,9 @@ const Index = () => {
             <h1 className="font-cinzel text-xl md:text-2xl text-primary glow-gold-subtle">PLAYLIKE</h1>
             <LoginButton />
           </div>
+          <div className="container mx-auto px-4 pb-1.5 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
+            <GlobalNav />
+          </div>
         </header>
       )}
       {user && <InviteButton />}
