@@ -21,7 +21,7 @@ import { useHomeConfig } from "@/hooks/useHomeConfig";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useAuth } from "@/contexts/AuthContext";
 import AppHeader from "@/components/AppHeader";
-// GlobalNav removed for logged-out header
+import GlobalNav from "@/components/GlobalNav";
 import InviteButton from "@/components/InviteButton";
 import { Loader2, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
