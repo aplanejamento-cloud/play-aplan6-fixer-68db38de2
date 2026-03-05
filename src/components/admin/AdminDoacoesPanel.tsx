@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useDoacoesPendentes, useAprovarDoacao, useRecusarDoacao, DoacaoPremioPendente } from "@/hooks/usePremios";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Gift, ChevronDown, ChevronUp, CheckCircle, XCircle, Clock, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
