@@ -117,10 +117,8 @@ export function useResgatarPremio() {
       });
       if (rErr) throw rErr;
 
-      await Promise.all([
-        supabase.from("profiles").update({ total_likes: profile.total_likes - likesCusto }).eq("user_id", userId),
-        supabase.from("premios").update({ estoque: premio.estoque - 1 }).eq("id", premioId),
-      ]);
+      // Only deduct likes from user - estoque is decremented when doador verifies senha
+      await supabase.from("profiles").update({ total_likes: profile.total_likes - likesCusto }).eq("user_id", userId);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["premios"] });
