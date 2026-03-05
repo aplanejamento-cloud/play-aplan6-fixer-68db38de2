@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { useCreatePost } from "@/hooks/usePosts";
@@ -10,11 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Upload, Download, Send, X, Type, Smile, Sparkles, RotateCcw,
   SunMedium, Contrast, Droplets, Palette, Zap, Moon, Eye, Layers,
-  Image as ImageIcon, Loader2
+  Image as ImageIcon, Loader2, Music
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const FILTERS = [
   { name: "Normal", css: "none", icon: Eye },
@@ -39,6 +41,12 @@ const EMOJIS = [
   "⚡", "💰", "🎁", "🏅", "🥇", "🥈", "🥉", "👸", "🤴", "🦁",
 ];
 
+const MUSIC_TRACKS = [
+  { name: "🎵 Reggae", genre: "reggae" },
+  { name: "🔥 Funk", genre: "funk" },
+  { name: "⚡ Eletrônico", genre: "electronic" },
+];
+
 interface TextOverlay {
   id: string;
   text: string;
@@ -57,16 +65,24 @@ interface EmojiOverlay {
 }
 
 const Editor = () => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const remixPostId = searchParams.get("remix");
   const remixImageUrl = searchParams.get("image");
   const remixCaption = searchParams.get("caption");
-  const multiplicadorParam = searchParams.get("multiplicador");
+  const temaIdParam = searchParams.get("tema");
 
-  const { temas } = useTemas();
-  const activeTema = multiplicadorParam ? temas.find(t => t.titulo.toLowerCase().replace(/\s+/g, '') === multiplicadorParam.toLowerCase()) : null;
+  // Fetch tema data from DB
+  const { data: temaData } = useQuery({
+    queryKey: ["tema-editor", temaIdParam],
+    queryFn: async () => {
+      if (!temaIdParam) return null;
+      const { data } = await supabase.from("temas").select("*").eq("id", temaIdParam).maybeSingle();
+      return data;
+    },
+    enabled: !!temaIdParam,
+  });
 
   const [image, setImage] = useState<string | null>(remixImageUrl || null);
   const [originalFile, setOriginalFile] = useState<File | null>(null);
@@ -75,6 +91,8 @@ const Editor = () => {
   const [emojiOverlays, setEmojiOverlays] = useState<EmojiOverlay[]>([]);
   const [showEmojis, setShowEmojis] = useState(false);
   const [showTextInput, setShowTextInput] = useState(false);
+  const [showMusic, setShowMusic] = useState(false);
+  const [selectedMusic, setSelectedMusic] = useState<string | null>(null);
   const [newText, setNewText] = useState("");
   const [textColor, setTextColor] = useState("#ffffff");
   const [postCaption, setPostCaption] = useState(remixCaption ? decodeURIComponent(remixCaption) : "");
@@ -155,13 +173,10 @@ const Editor = () => {
         canvas.width = img.width;
         canvas.height = img.height;
         const ctx = canvas.getContext("2d")!;
-
-        // Apply filter
         ctx.filter = FILTERS[activeFilter].css;
         ctx.drawImage(img, 0, 0);
         ctx.filter = "none";
 
-        // Text overlays
         textOverlays.forEach(t => {
           const px = (t.x / 100) * canvas.width;
           const py = (t.y / 100) * canvas.height;
@@ -175,7 +190,6 @@ const Editor = () => {
           ctx.fillText(t.text, px, py);
         });
 
-        // Emoji overlays
         emojiOverlays.forEach(e => {
           const px = (e.x / 100) * canvas.width;
           const py = (e.y / 100) * canvas.height;
@@ -185,7 +199,6 @@ const Editor = () => {
           ctx.fillText(e.emoji, px, py);
         });
 
-        // Watermark
         const wmSize = canvas.width * 0.03;
         ctx.font = `bold ${wmSize}px sans-serif`;
         ctx.fillStyle = "rgba(255,255,255,0.4)";
@@ -220,12 +233,19 @@ const Editor = () => {
       const url = await upload(file, "image");
       if (!url) return;
 
-      await createPost.mutateAsync({
-        content: postCaption || "Criado no Editor PlayLike ✨",
+      const postData: any = {
+        content: postCaption || `Criado no Editor PlayLike ✨${temaData ? ` | Tema: ${temaData.titulo}` : ""}`,
         imageUrl: url,
-      });
+      };
 
-      toast.success("Post publicado! 🎉");
+      const result = await createPost.mutateAsync(postData);
+
+      // If tema, update multiplicador on the post
+      if (temaData && result?.id) {
+        await supabase.from("posts").update({ multiplicador: temaData.fator } as any).eq("id", result.id);
+      }
+
+      toast.success(temaData ? `Post publicado com ${temaData.fator}x likes! 🎉` : "Post publicado! 🎉");
       navigate("/feed");
     } catch { toast.error("Erro ao publicar"); }
   };
@@ -235,170 +255,177 @@ const Editor = () => {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <main className="container mx-auto px-4 py-6 max-w-2xl space-y-4">
-        {activeTema && (
-          <div className="p-3 rounded-xl bg-primary/10 border border-primary/30 text-center">
-            <p className="text-sm font-cinzel text-primary">🎨 Tema Ativo: {activeTema.titulo}</p>
-            <p className="text-xs text-muted-foreground">Multiplicador: {activeTema.fator}x likes</p>
-            {activeTema.midia_url && (
-              <img src={activeTema.midia_url} alt={activeTema.titulo} className="w-full max-h-32 object-cover rounded-lg mt-2" />
-            )}
-          </div>
-        )}
-
+      <main className="container mx-auto px-4 py-6 max-w-3xl space-y-4">
         <h1 className="font-cinzel text-2xl text-center text-foreground">
           Editor <span className="text-primary">PlayLike</span> ✨
         </h1>
 
-        {!image ? (
-          <label className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary/50 transition-colors bg-card">
-            <Upload className="w-12 h-12 text-muted-foreground mb-3" />
-            <p className="text-muted-foreground text-sm">Toque para selecionar uma foto</p>
-            <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-          </label>
-        ) : (
-          <>
-            {/* Canvas area */}
-            <div
-              ref={containerRef}
-              className="relative rounded-xl overflow-hidden border border-border bg-black touch-none select-none"
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerLeave={handlePointerUp}
-            >
-              <img
-                src={image}
-                alt="Editor"
-                className="w-full block"
-                style={{ filter: FILTERS[activeFilter].css }}
-                draggable={false}
+        {/* Tema side-by-side layout */}
+        {temaData ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* LEFT: Tema info */}
+            <div className="space-y-3">
+              <div className="p-4 rounded-xl bg-primary/10 border border-primary/30 space-y-2">
+                <p className="font-cinzel text-lg text-primary text-center">🎨 {temaData.titulo}</p>
+                <p className="text-center text-sm text-foreground">⭐ {temaData.fator}x likes</p>
+                {(temaData as any).midia_url && (
+                  <img src={(temaData as any).midia_url} alt={temaData.titulo} className="w-full max-h-48 object-cover rounded-lg" />
+                )}
+                <p className="text-xs text-muted-foreground text-center">
+                  Likes serão multiplicados por <span className="text-primary font-bold">{temaData.fator}x</span>
+                </p>
+              </div>
+            </div>
+
+            {/* RIGHT: Upload + editor */}
+            <div className="space-y-4">
+              {!image ? (
+                <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary/50 transition-colors bg-card">
+                  <Upload className="w-10 h-10 text-muted-foreground mb-2" />
+                  <p className="text-muted-foreground text-sm">Selecionar foto</p>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                </label>
+              ) : (
+                <EditorCanvas
+                  image={image} activeFilter={activeFilter} textOverlays={textOverlays}
+                  emojiOverlays={emojiOverlays} containerRef={containerRef}
+                  handlePointerMove={handlePointerMove} handlePointerUp={handlePointerUp}
+                  handlePointerDown={handlePointerDown} removeOverlay={removeOverlay}
+                />
+              )}
+
+              <Textarea
+                placeholder={`Este usuário escolheu o tema "${temaData.titulo}". Poste algo relacionado!`}
+                value={postCaption}
+                onChange={e => setPostCaption(e.target.value)}
+                className="min-h-[120px] bg-card border-border"
+                maxLength={500}
               />
 
-              {/* Text overlays */}
-              {textOverlays.map(t => (
-                <div
-                  key={t.id}
-                  className="absolute cursor-move"
-                  style={{
-                    left: `${t.x}%`, top: `${t.y}%`,
-                    transform: "translate(-50%, -50%)",
-                    color: t.color,
-                    fontSize: t.fontSize,
-                    fontWeight: "bold",
-                    textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
-                    userSelect: "none",
-                  }}
-                  onPointerDown={() => handlePointerDown("text", t.id)}
-                >
-                  {t.text}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); removeOverlay("text", t.id); }}
-                    className="absolute -top-2 -right-2 w-5 h-5 bg-destructive rounded-full flex items-center justify-center"
-                  >
-                    <X className="w-3 h-3 text-white" />
-                  </button>
+              <Button
+                className="w-full font-cinzel text-lg bg-primary hover:bg-primary/90"
+                onClick={handlePost}
+                disabled={isProcessing || !image}
+              >
+                {isProcessing ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Send className="w-5 h-5 mr-2" />}
+                Publicar {temaData.fator}x 🚀
+              </Button>
+            </div>
+          </div>
+        ) : (
+          /* Normal editor (no tema) */
+          <>
+            {!image ? (
+              <label className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary/50 transition-colors bg-card">
+                <Upload className="w-12 h-12 text-muted-foreground mb-3" />
+                <p className="text-muted-foreground text-sm">Toque para selecionar uma foto</p>
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+              </label>
+            ) : (
+              <>
+                <EditorCanvas
+                  image={image} activeFilter={activeFilter} textOverlays={textOverlays}
+                  emojiOverlays={emojiOverlays} containerRef={containerRef}
+                  handlePointerMove={handlePointerMove} handlePointerUp={handlePointerUp}
+                  handlePointerDown={handlePointerDown} removeOverlay={removeOverlay}
+                />
+
+                {/* Filters */}
+                <div className="overflow-x-auto">
+                  <div className="flex gap-2 pb-2">
+                    {FILTERS.map((f, i) => (
+                      <button
+                        key={f.name}
+                        onClick={() => setActiveFilter(i)}
+                        className={cn(
+                          "flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all min-w-[60px]",
+                          i === activeFilter ? "bg-primary/20 text-primary border border-primary/30" : "bg-card border border-border text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <f.icon className="w-4 h-4" />
+                        {f.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              ))}
 
-              {/* Emoji overlays */}
-              {emojiOverlays.map(e => (
-                <div
-                  key={e.id}
-                  className="absolute cursor-move"
-                  style={{
-                    left: `${e.x}%`, top: `${e.y}%`,
-                    transform: "translate(-50%, -50%)",
-                    fontSize: e.size,
-                    userSelect: "none",
-                  }}
-                  onPointerDown={() => handlePointerDown("emoji", e.id)}
-                >
-                  {e.emoji}
-                  <button
-                    onClick={(ev) => { ev.stopPropagation(); removeOverlay("emoji", e.id); }}
-                    className="absolute -top-1 -right-1 w-4 h-4 bg-destructive rounded-full flex items-center justify-center"
-                  >
-                    <X className="w-2.5 h-2.5 text-white" />
-                  </button>
+                {/* Tools */}
+                <div className="flex gap-2 flex-wrap">
+                  <Button variant="outline" size="sm" onClick={() => setShowTextInput(!showTextInput)}>
+                    <Type className="w-4 h-4 mr-1" /> Texto
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setShowEmojis(!showEmojis)}>
+                    <Smile className="w-4 h-4 mr-1" /> Emojis
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setShowMusic(!showMusic)}>
+                    <Music className="w-4 h-4 mr-1" /> Música
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => { setImage(null); setTextOverlays([]); setEmojiOverlays([]); setActiveFilter(0); }}>
+                    <RotateCcw className="w-4 h-4 mr-1" /> Resetar
+                  </Button>
                 </div>
-              ))}
-            </div>
 
-            {/* Filters */}
-            <div className="overflow-x-auto">
-              <div className="flex gap-2 pb-2">
-                {FILTERS.map((f, i) => (
-                  <button
-                    key={f.name}
-                    onClick={() => setActiveFilter(i)}
-                    className={cn(
-                      "flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all min-w-[60px]",
-                      i === activeFilter ? "bg-primary/20 text-primary border border-primary/30" : "bg-card border border-border text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <f.icon className="w-4 h-4" />
-                    {f.name}
-                  </button>
-                ))}
-              </div>
-            </div>
+                {/* Text input */}
+                {showTextInput && (
+                  <div className="flex gap-2 items-end bg-card p-3 rounded-lg border border-border">
+                    <Input value={newText} onChange={e => setNewText(e.target.value)} placeholder="Digite o texto..." className="flex-1" maxLength={50} />
+                    <input type="color" value={textColor} onChange={e => setTextColor(e.target.value)} className="w-10 h-10 rounded cursor-pointer" />
+                    <Button size="sm" onClick={addTextOverlay} disabled={!newText.trim()}>Adicionar</Button>
+                  </div>
+                )}
 
-            {/* Tools */}
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowTextInput(!showTextInput)}>
-                <Type className="w-4 h-4 mr-1" /> Texto
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowEmojis(!showEmojis)}>
-                <Smile className="w-4 h-4 mr-1" /> Emojis
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => { setImage(null); setTextOverlays([]); setEmojiOverlays([]); setActiveFilter(0); }}>
-                <RotateCcw className="w-4 h-4 mr-1" /> Resetar
-              </Button>
-            </div>
+                {/* Emoji picker */}
+                {showEmojis && (
+                  <div className="grid grid-cols-10 gap-1 bg-card p-3 rounded-lg border border-border max-h-40 overflow-y-auto">
+                    {EMOJIS.map(e => (
+                      <button key={e} onClick={() => addEmoji(e)} className="text-2xl hover:scale-125 transition-transform p-1">
+                        {e}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
-            {/* Text input */}
-            {showTextInput && (
-              <div className="flex gap-2 items-end bg-card p-3 rounded-lg border border-border">
-                <Input value={newText} onChange={e => setNewText(e.target.value)} placeholder="Digite o texto..." className="flex-1" maxLength={50} />
-                <input type="color" value={textColor} onChange={e => setTextColor(e.target.value)} className="w-10 h-10 rounded cursor-pointer" />
-                <Button size="sm" onClick={addTextOverlay} disabled={!newText.trim()}>Adicionar</Button>
-              </div>
+                {/* Music picker */}
+                {showMusic && (
+                  <div className="flex gap-2 bg-card p-3 rounded-lg border border-border">
+                    {MUSIC_TRACKS.map(t => (
+                      <Button
+                        key={t.genre}
+                        variant={selectedMusic === t.genre ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedMusic(selectedMusic === t.genre ? null : t.genre)}
+                      >
+                        {t.name}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Caption */}
+                <Textarea
+                  placeholder="Legenda do post (opcional)..."
+                  value={postCaption}
+                  onChange={e => setPostCaption(e.target.value)}
+                  className="min-h-[60px] bg-card border-border"
+                  maxLength={500}
+                />
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1" onClick={handleDownload} disabled={isProcessing}>
+                    <Download className="w-4 h-4 mr-1" /> Baixar
+                  </Button>
+                  <Button className="flex-1 bg-primary hover:bg-primary/90" onClick={handlePost} disabled={isProcessing}>
+                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+                    Postar
+                  </Button>
+                </div>
+              </>
             )}
-
-            {/* Emoji picker */}
-            {showEmojis && (
-              <div className="grid grid-cols-10 gap-1 bg-card p-3 rounded-lg border border-border max-h-40 overflow-y-auto">
-                {EMOJIS.map(e => (
-                  <button key={e} onClick={() => addEmoji(e)} className="text-2xl hover:scale-125 transition-transform p-1">
-                    {e}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Caption */}
-            <Textarea
-              placeholder="Legenda do post (opcional)..."
-              value={postCaption}
-              onChange={e => setPostCaption(e.target.value)}
-              className="min-h-[60px] bg-card border-border"
-              maxLength={500}
-            />
-
-            {/* Actions */}
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={handleDownload} disabled={isProcessing}>
-                <Download className="w-4 h-4 mr-1" /> Baixar
-              </Button>
-              <Button className="flex-1 bg-primary hover:bg-primary/90" onClick={handlePost} disabled={isProcessing}>
-                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
-                Postar
-              </Button>
-            </div>
-
-            <canvas ref={canvasRef} className="hidden" />
           </>
         )}
+
+        <canvas ref={canvasRef} className="hidden" />
 
         {remixPostId && (
           <p className="text-xs text-center text-muted-foreground">
@@ -409,5 +436,78 @@ const Editor = () => {
     </div>
   );
 };
+
+// Extracted canvas preview component
+const EditorCanvas = ({
+  image, activeFilter, textOverlays, emojiOverlays, containerRef,
+  handlePointerMove, handlePointerUp, handlePointerDown, removeOverlay,
+}: {
+  image: string;
+  activeFilter: number;
+  textOverlays: TextOverlay[];
+  emojiOverlays: EmojiOverlay[];
+  containerRef: React.RefObject<HTMLDivElement>;
+  handlePointerMove: (e: React.PointerEvent) => void;
+  handlePointerUp: () => void;
+  handlePointerDown: (type: "text" | "emoji", id: string) => void;
+  removeOverlay: (type: "text" | "emoji", id: string) => void;
+}) => (
+  <div
+    ref={containerRef}
+    className="relative rounded-xl overflow-hidden border border-border bg-black touch-none select-none"
+    onPointerMove={handlePointerMove}
+    onPointerUp={handlePointerUp}
+    onPointerLeave={handlePointerUp}
+  >
+    <img
+      src={image}
+      alt="Editor"
+      className="w-full block"
+      style={{ filter: FILTERS[activeFilter].css }}
+      draggable={false}
+    />
+    {textOverlays.map(t => (
+      <div
+        key={t.id}
+        className="absolute cursor-move"
+        style={{
+          left: `${t.x}%`, top: `${t.y}%`,
+          transform: "translate(-50%, -50%)",
+          color: t.color, fontSize: t.fontSize, fontWeight: "bold",
+          textShadow: "2px 2px 4px rgba(0,0,0,0.8)", userSelect: "none",
+        }}
+        onPointerDown={() => handlePointerDown("text", t.id)}
+      >
+        {t.text}
+        <button
+          onClick={(e) => { e.stopPropagation(); removeOverlay("text", t.id); }}
+          className="absolute -top-2 -right-2 w-5 h-5 bg-destructive rounded-full flex items-center justify-center"
+        >
+          <X className="w-3 h-3 text-white" />
+        </button>
+      </div>
+    ))}
+    {emojiOverlays.map(e => (
+      <div
+        key={e.id}
+        className="absolute cursor-move"
+        style={{
+          left: `${e.x}%`, top: `${e.y}%`,
+          transform: "translate(-50%, -50%)",
+          fontSize: e.size, userSelect: "none",
+        }}
+        onPointerDown={() => handlePointerDown("emoji", e.id)}
+      >
+        {e.emoji}
+        <button
+          onClick={(ev) => { ev.stopPropagation(); removeOverlay("emoji", e.id); }}
+          className="absolute -top-1 -right-1 w-4 h-4 bg-destructive rounded-full flex items-center justify-center"
+        >
+          <X className="w-2.5 h-2.5 text-white" />
+        </button>
+      </div>
+    ))}
+  </div>
+);
 
 export default Editor;
