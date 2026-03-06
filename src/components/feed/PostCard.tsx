@@ -138,6 +138,14 @@ const PostCard = ({ post }: PostCardProps) => {
           </div>
         </header>
 
+        {/* Tema badge */}
+        {(post as any).multiplicador && (post as any).multiplicador > 1 && (
+          <div className="mt-2 flex items-center gap-1.5 bg-primary/10 border border-primary/30 rounded-full px-3 py-1 w-fit">
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-bold text-primary">✅ Postou com tema • {(post as any).multiplicador}x likes</span>
+          </div>
+        )}
+
       {post.content && (
           <div className="mt-2">
             <p className="text-foreground whitespace-pre-wrap break-words">
