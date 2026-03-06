@@ -30,10 +30,10 @@ const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: 
     setResult(null);
     try {
       // Find resgate by ticket code
-      const { data: resgate, error: rErr } = await supabase
+      const { data: resgate, error: rErr } = await (supabase
         .from("resgates")
-        .select("*")
-        .eq("senha_unica" as any, code)
+        .select("*") as any)
+        .eq("senha_unica", code)
         .maybeSingle();
 
       if (rErr || !resgate) {
@@ -50,7 +50,7 @@ const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: 
         return;
       }
 
-      const claimedUserId = (resgate as any).claimed_by_user_id || resgate.user_id;
+      const claimedUserId = (resgate as any).claimed_by_user_id || (resgate as any).usuario_id;
       const likesGastos = (resgate as any).likes_gastos || likesRecebidos;
 
       // Check claimed user has enough likes

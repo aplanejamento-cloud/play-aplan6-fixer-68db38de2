@@ -13,8 +13,8 @@ export interface Duel {
   challenged_votes: number;
   created_at: string;
   resolved_at: string | null;
-  stake_amount?: number;
-  duel_type?: "normal" | "fatalite";
+  stake_amount: number;
+  duel_type: "normal" | "fatalite";
   challenger_profile?: { name: string; avatar_url: string | null; total_likes: number };
   challenged_profile?: { name: string; avatar_url: string | null; total_likes: number };
 }
@@ -24,6 +24,14 @@ export function useDuels() {
   const [duels, setDuels] = useState<Duel[]>([]);
   const [pendingDuels, setPendingDuels] = useState<Duel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const mapDuel = (d: any): Duel => ({
+    ...d,
+    challenger_votes: d.challenger_votes || 0,
+    challenged_votes: d.challenged_votes || 0,
+    stake_amount: d.stake_amount ?? 100,
+    duel_type: d.duel_type ?? "normal",
+  });
 
   const fetchDuels = async () => {
     const { data, error } = await supabase
@@ -37,16 +45,7 @@ export function useDuels() {
       .order("created_at", { ascending: false })
       .limit(50);
 
-    if (!error && data) {
-      setDuels(data.map((d: any) => ({
-        ...d,
-        challenger_profile: d.challenger_profile,
-        challenged_profile: d.challenged_profile,
-        // Read stake info from metadata or columns if they exist
-        stake_amount: d.stake_amount ?? 100,
-        duel_type: d.duel_type ?? "normal",
-      })));
-    }
+    if (!error && data) setDuels(data.map(mapDuel));
     setIsLoading(false);
   };
 
@@ -62,11 +61,7 @@ export function useDuels() {
       .eq("status", "pending")
       .or(`challenged_id.eq.${user.id},challenger_id.eq.${user.id}`);
 
-    if (data) setPendingDuels(data.map((d: any) => ({
-      ...d,
-      stake_amount: d.stake_amount ?? 100,
-      duel_type: d.duel_type ?? "normal",
-    })));
+    if (data) setPendingDuels(data.map(mapDuel));
   };
 
   useEffect(() => {
@@ -94,36 +89,18 @@ export function useDuels() {
       return;
     }
 
-    const insertData: any = {
+    const { error } = await supabase.from("duels").insert({
       challenger_id: user.id,
       challenged_id: challengedId,
-    };
+      stake_amount: duelType === "fatalite" ? 0 : stakeAmount,
+      duel_type: duelType,
+    });
 
-    // Try to include stake columns (they may or may not exist in DB)
-    try {
-      const { error } = await supabase.from("duels").insert({
-        ...insertData,
-        stake_amount: duelType === "fatalite" ? 0 : stakeAmount,
-        duel_type: duelType,
-      });
-
-      if (error) {
-        // Fallback without stake columns
-        const { error: error2 } = await supabase.from("duels").insert(insertData);
-        if (error2) {
-          toast.error("Erro ao criar desafio");
-          return;
-        }
-      }
-    } catch {
-      const { error } = await supabase.from("duels").insert(insertData);
-      if (error) {
-        toast.error("Erro ao criar desafio");
-        return;
-      }
+    if (error) {
+      toast.error("Erro ao criar desafio");
+      return;
     }
 
-    // Notify challenged user
     const stakeLabel = duelType === "fatalite" ? "FATALITÉ ☠️ (tudo ou nada!)" : `${stakeAmount} likes`;
     await supabase.from("notifications").insert({
       user_id: challengedId,
@@ -140,7 +117,7 @@ export function useDuels() {
   const acceptDuel = async (duelId: string) => {
     const { error } = await supabase
       .from("duels")
-      .update({ status: "active" })
+      .update({ status: "active" } as any)
       .eq("id", duelId);
 
     if (!error) {
@@ -153,7 +130,7 @@ export function useDuels() {
   const refuseDuel = async (duel: Duel) => {
     await supabase
       .from("duels")
-      .update({ status: "refused", resolved_at: new Date().toISOString() })
+      .update({ status: "refused", resolved_at: new Date().toISOString() } as any)
       .eq("id", duel.id);
 
     // Penalty: refused user loses 10 likes, challenger gains 10
@@ -181,7 +158,6 @@ export function useDuels() {
         .eq("user_id", duel.challenger_id);
     }
 
-    // Notify challenger
     await supabase.from("notifications").insert({
       user_id: duel.challenger_id,
       tipo: "duelo",
@@ -198,14 +174,16 @@ export function useDuels() {
     const duel = duels.find((d) => d.id === duelId);
     if (!duel || duel.status !== "active") return;
 
-    const challengerWins = duel.challenger_votes > duel.challenged_votes;
-    const tie = duel.challenger_votes === duel.challenged_votes;
+    const cVotes = duel.challenger_votes || 0;
+    const dVotes = duel.challenged_votes || 0;
+    const tie = cVotes === dVotes;
+    const challengerWins = cVotes > dVotes;
     const winnerId = tie ? null : challengerWins ? duel.challenger_id : duel.challenged_id;
     const loserId = tie ? null : challengerWins ? duel.challenged_id : duel.challenger_id;
 
     await supabase
       .from("duels")
-      .update({ status: "completed", winner_id: winnerId, resolved_at: new Date().toISOString() })
+      .update({ status: "completed", winner_id: winnerId, resolved_at: new Date().toISOString() } as any)
       .eq("id", duelId);
 
     if (tie) {
@@ -214,76 +192,58 @@ export function useDuels() {
       return;
     }
 
-    if (duel.duel_type === "fatalite" && loserId && winnerId) {
-      // FATALITÉ: loser goes to 0 likes + eliminated 3 days
-      const { data: loserProfile } = await supabase
-        .from("profiles")
-        .select("total_likes")
-        .eq("user_id", loserId)
-        .single();
+    const isFatalite = duel.duel_type === "fatalite";
+    const stakeAmount = isFatalite ? 0 : (duel.stake_amount || 100);
 
-      const { data: winnerProfile } = await supabase
-        .from("profiles")
-        .select("total_likes")
-        .eq("user_id", winnerId)
-        .single();
+    const { data: loserProfile } = await supabase
+      .from("profiles")
+      .select("total_likes")
+      .eq("user_id", loserId!)
+      .single();
 
-      if (loserProfile && winnerProfile) {
-        // Winner gets all loser's likes
+    const { data: winnerProfile } = await supabase
+      .from("profiles")
+      .select("total_likes")
+      .eq("user_id", winnerId!)
+      .single();
+
+    if (loserProfile && winnerProfile) {
+      if (isFatalite) {
+        // FATALITÉ: winner gets all loser's likes, loser goes to 0
         await supabase
           .from("profiles")
           .update({ total_likes: winnerProfile.total_likes + loserProfile.total_likes })
-          .eq("user_id", winnerId);
-
-        // Loser goes to 0 (will be auto-eliminated by existing system)
+          .eq("user_id", winnerId!);
         await supabase
           .from("profiles")
           .update({ total_likes: 0 })
-          .eq("user_id", loserId);
-      }
-
-      await supabase.from("notifications").insert([
-        { user_id: winnerId, tipo: "duelo", from_user_id: loserId, mensagem: "🏆 FATALITÉ! Você VENCEU e ganhou TODOS os likes do oponente! ☠️" },
-        { user_id: loserId, tipo: "duelo", from_user_id: winnerId, mensagem: "☠️ FATALITÉ! Você PERDEU tudo! 0 likes + Eliminado 3 dias!" },
-      ]);
-
-      toast.success("FATALITÉ resolvido! ☠️");
-    } else if (loserId && winnerId) {
-      // Normal duel: transfer stake_amount likes
-      const stakeAmount = duel.stake_amount || 100;
-
-      const { data: loserProfile } = await supabase
-        .from("profiles")
-        .select("total_likes")
-        .eq("user_id", loserId)
-        .single();
-
-      const { data: winnerProfile } = await supabase
-        .from("profiles")
-        .select("total_likes")
-        .eq("user_id", winnerId)
-        .single();
-
-      if (loserProfile && winnerProfile) {
+          .eq("user_id", loserId!);
+      } else {
+        // Normal: transfer hardcoded stake
         await supabase
           .from("profiles")
           .update({ total_likes: Math.max(0, loserProfile.total_likes - stakeAmount) })
-          .eq("user_id", loserId);
-
+          .eq("user_id", loserId!);
         await supabase
           .from("profiles")
           .update({ total_likes: winnerProfile.total_likes + stakeAmount })
-          .eq("user_id", winnerId);
+          .eq("user_id", winnerId!);
       }
-
-      await supabase.from("notifications").insert([
-        { user_id: winnerId, tipo: "duelo", from_user_id: loserId, mensagem: `🏆 Você VENCEU o duelo e ganhou ${stakeAmount} likes!` },
-        { user_id: loserId, tipo: "duelo", from_user_id: winnerId, mensagem: `😔 Você PERDEU o duelo e perdeu ${stakeAmount} likes!` },
-      ]);
-
-      toast.success("Duelo resolvido! ⚔️");
     }
 
+    const winMsg = isFatalite
+      ? "🏆 FATALITÉ! Você VENCEU e ganhou TODOS os likes do oponente! ☠️"
+      : `🏆 Você VENCEU o duelo e ganhou ${stakeAmount} likes!`;
+    const loseMsg = isFatalite
+      ? "☠️ FATALITÉ! Você PERDEU tudo! 0 likes + Eliminado 3 dias!"
+      : `😔 Você PERDEU o duelo e perdeu ${stakeAmount} likes!`;
+
+    await supabase.from("notifications").insert([
+      { user_id: winnerId!, tipo: "duelo", from_user_id: loserId!, mensagem: winMsg },
+      { user_id: loserId!, tipo: "duelo", from_user_id: winnerId!, mensagem: loseMsg },
+    ]);
+
+    toast.success(isFatalite ? "FATALITÉ resolvido! ☠️" : "Duelo resolvido! ⚔️");
     fetchDuels();
     fetchPending();
   };
@@ -314,10 +274,10 @@ export function useDuels() {
     const duel = duels.find((d) => d.id === duelId);
     if (duel) {
       const field = votedFor === duel.challenger_id ? "challenger_votes" : "challenged_votes";
-      const currentVotes = votedFor === duel.challenger_id ? duel.challenger_votes : duel.challenged_votes;
+      const currentVotes = votedFor === duel.challenger_id ? (duel.challenger_votes || 0) : (duel.challenged_votes || 0);
       await supabase
         .from("duels")
-        .update({ [field]: currentVotes + voteValue })
+        .update({ [field]: currentVotes + voteValue } as any)
         .eq("id", duelId);
     }
 
