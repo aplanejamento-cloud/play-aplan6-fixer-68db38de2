@@ -156,7 +156,7 @@ export function useDuels() {
       .update({ status: "refused", resolved_at: new Date().toISOString() })
       .eq("id", duel.id);
 
-    // Penalty: refused user loses 100 likes, challenger gains 100
+    // Penalty: refused user loses 10 likes, challenger gains 10
     const { data: challengedProfile } = await supabase
       .from("profiles")
       .select("total_likes")
@@ -172,16 +172,118 @@ export function useDuels() {
     if (challengedProfile && challengerProfile) {
       await supabase
         .from("profiles")
-        .update({ total_likes: Math.max(0, challengedProfile.total_likes - 100) })
+        .update({ total_likes: Math.max(0, challengedProfile.total_likes - 10) })
         .eq("user_id", duel.challenged_id);
 
       await supabase
         .from("profiles")
-        .update({ total_likes: challengerProfile.total_likes + 100 })
+        .update({ total_likes: challengerProfile.total_likes + 10 })
         .eq("user_id", duel.challenger_id);
     }
 
-    toast.info("Desafio recusado! -100 likes para quem arregou 😔");
+    // Notify challenger
+    await supabase.from("notifications").insert({
+      user_id: duel.challenger_id,
+      tipo: "duelo",
+      from_user_id: duel.challenged_id,
+      mensagem: "😤 Seu oponente ARREGOU! +10 likes para você!",
+    });
+
+    toast.info("Desafio recusado! -10 likes para quem arregou 😔");
+    fetchDuels();
+    fetchPending();
+  };
+
+  const resolveDuel = async (duelId: string) => {
+    const duel = duels.find((d) => d.id === duelId);
+    if (!duel || duel.status !== "active") return;
+
+    const challengerWins = duel.challenger_votes > duel.challenged_votes;
+    const tie = duel.challenger_votes === duel.challenged_votes;
+    const winnerId = tie ? null : challengerWins ? duel.challenger_id : duel.challenged_id;
+    const loserId = tie ? null : challengerWins ? duel.challenged_id : duel.challenger_id;
+
+    await supabase
+      .from("duels")
+      .update({ status: "completed", winner_id: winnerId, resolved_at: new Date().toISOString() })
+      .eq("id", duelId);
+
+    if (tie) {
+      toast.info("Duelo empatou! Ninguém perde likes.");
+      fetchDuels();
+      return;
+    }
+
+    if (duel.duel_type === "fatalite" && loserId && winnerId) {
+      // FATALITÉ: loser goes to 0 likes + eliminated 3 days
+      const { data: loserProfile } = await supabase
+        .from("profiles")
+        .select("total_likes")
+        .eq("user_id", loserId)
+        .single();
+
+      const { data: winnerProfile } = await supabase
+        .from("profiles")
+        .select("total_likes")
+        .eq("user_id", winnerId)
+        .single();
+
+      if (loserProfile && winnerProfile) {
+        // Winner gets all loser's likes
+        await supabase
+          .from("profiles")
+          .update({ total_likes: winnerProfile.total_likes + loserProfile.total_likes })
+          .eq("user_id", winnerId);
+
+        // Loser goes to 0 (will be auto-eliminated by existing system)
+        await supabase
+          .from("profiles")
+          .update({ total_likes: 0 })
+          .eq("user_id", loserId);
+      }
+
+      await supabase.from("notifications").insert([
+        { user_id: winnerId, tipo: "duelo", from_user_id: loserId, mensagem: "🏆 FATALITÉ! Você VENCEU e ganhou TODOS os likes do oponente! ☠️" },
+        { user_id: loserId, tipo: "duelo", from_user_id: winnerId, mensagem: "☠️ FATALITÉ! Você PERDEU tudo! 0 likes + Eliminado 3 dias!" },
+      ]);
+
+      toast.success("FATALITÉ resolvido! ☠️");
+    } else if (loserId && winnerId) {
+      // Normal duel: transfer stake_amount likes
+      const stakeAmount = duel.stake_amount || 100;
+
+      const { data: loserProfile } = await supabase
+        .from("profiles")
+        .select("total_likes")
+        .eq("user_id", loserId)
+        .single();
+
+      const { data: winnerProfile } = await supabase
+        .from("profiles")
+        .select("total_likes")
+        .eq("user_id", winnerId)
+        .single();
+
+      if (loserProfile && winnerProfile) {
+        await supabase
+          .from("profiles")
+          .update({ total_likes: Math.max(0, loserProfile.total_likes - stakeAmount) })
+          .eq("user_id", loserId);
+
+        await supabase
+          .from("profiles")
+          .update({ total_likes: winnerProfile.total_likes + stakeAmount })
+          .eq("user_id", winnerId);
+      }
+
+      await supabase.from("notifications").insert([
+        { user_id: winnerId, tipo: "duelo", from_user_id: loserId, mensagem: `🏆 Você VENCEU o duelo e ganhou ${stakeAmount} likes!` },
+        { user_id: loserId, tipo: "duelo", from_user_id: winnerId, mensagem: `😔 Você PERDEU o duelo e perdeu ${stakeAmount} likes!` },
+      ]);
+
+      toast.success("Duelo resolvido! ⚔️");
+    }
+
     fetchDuels();
     fetchPending();
   };
@@ -231,6 +333,7 @@ export function useDuels() {
     acceptDuel,
     refuseDuel,
     voteDuel,
+    resolveDuel,
     refresh: fetchDuels,
   };
 }
