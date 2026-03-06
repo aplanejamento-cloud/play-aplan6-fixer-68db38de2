@@ -7,8 +7,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useDeletePost } from "@/hooks/usePosts";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useRemixCount } from "@/hooks/useRemix";
+import { useDuels } from "@/hooks/useDuels";
 import { Button } from "@/components/ui/button";
-import { Heart, Flame, Bomb, UserPlus, UserMinus, Trash2, Crown, User, Music, Gift, Repeat2, Sparkles } from "lucide-react";
+import { Heart, Flame, Bomb, UserPlus, UserMinus, Trash2, Crown, User, Music, Gift, Repeat2, Sparkles, Swords } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -19,6 +20,7 @@ import MimoModal from "@/components/MimoModal";
 import VideoPost from "./VideoPost";
 import PostModerationBar from "./PostModerationBar";
 import YouTubeEmbed, { extractYouTubeId } from "./YouTubeEmbed";
+import ChallengeDialog from "./ChallengeDialog";
 
 interface PostCardProps {
   post: Post;
@@ -34,11 +36,14 @@ const PostCard = ({ post }: PostCardProps) => {
   const toggleFollow = useToggleFollow();
   const deletePost = useDeletePost();
   const { data: remixCount } = useRemixCount(post.id);
+  const { challengeUser } = useDuels();
   const navigate = useNavigate();
   const [showMimo, setShowMimo] = useState(false);
+  const [showChallenge, setShowChallenge] = useState(false);
 
   const isFollowing = following.includes(post.user_id);
   const isOwnPost = user?.id === post.user_id;
+  const isTargetJogador = post.author?.user_type === "jogador";
 
   const allImages: string[] = [];
   if (post.image_url) allImages.push(post.image_url);
@@ -75,6 +80,10 @@ const PostCard = ({ post }: PostCardProps) => {
       await deletePost.mutateAsync(post.id);
       toast.success("Post removido!");
     } catch { toast.error("Erro ao excluir post"); }
+  };
+
+  const handleChallengeConfirm = (stakeAmount: number, duelType: "normal" | "fatalite") => {
+    challengeUser(post.user_id, stakeAmount, duelType);
   };
 
   const InteractionButton = ({ type, icon: Icon, label, activeClass, value }: {
@@ -168,7 +177,7 @@ const PostCard = ({ post }: PostCardProps) => {
         )}
       </div>
 
-      {/* MEDIA — Facebook-style: full width, large */}
+      {/* MEDIA */}
       {allImages.length > 0 && (
         <div className="w-full">
           <ImageCarousel images={allImages} />
@@ -202,6 +211,18 @@ const PostCard = ({ post }: PostCardProps) => {
           <InteractionButton type="like" icon={Heart} label="Curtir" activeClass="bg-primary/20 text-primary" value="+1" />
           <InteractionButton type="love" icon={Flame} label="Lacrou" activeClass="bg-orange-500/20 text-orange-500" value="+10" />
           <InteractionButton type="bomb" icon={Bomb} label="Bomba" activeClass="bg-destructive/20 text-destructive" value="-10" />
+          
+          {/* Challenge button - only for other jogadores */}
+          {user && !isOwnPost && isTargetJogador && profile?.user_type === "jogador" && (
+            <button
+              onClick={() => setShowChallenge(true)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all"
+            >
+              <Swords className="w-4 h-4" />
+              <span className="hidden sm:inline">Duelo</span>
+            </button>
+          )}
+          
           {user && !isOwnPost && (
             <button
               onClick={() => {
@@ -244,6 +265,15 @@ const PostCard = ({ post }: PostCardProps) => {
           onOpenChange={setShowMimo}
           targetUserId={post.user_id}
           targetName={post.author.name}
+        />
+      )}
+
+      {showChallenge && post.author && (
+        <ChallengeDialog
+          open={showChallenge}
+          onOpenChange={setShowChallenge}
+          targetName={post.author.name}
+          onConfirm={handleChallengeConfirm}
         />
       )}
     </article>

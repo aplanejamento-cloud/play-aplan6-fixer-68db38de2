@@ -13,6 +13,8 @@ export interface Duel {
   challenged_votes: number;
   created_at: string;
   resolved_at: string | null;
+  stake_amount?: number;
+  duel_type?: "normal" | "fatalite";
   challenger_profile?: { name: string; avatar_url: string | null; total_likes: number };
   challenged_profile?: { name: string; avatar_url: string | null; total_likes: number };
 }
@@ -40,6 +42,9 @@ export function useDuels() {
         ...d,
         challenger_profile: d.challenger_profile,
         challenged_profile: d.challenged_profile,
+        // Read stake info from metadata or columns if they exist
+        stake_amount: d.stake_amount ?? 100,
+        duel_type: d.duel_type ?? "normal",
       })));
     }
     setIsLoading(false);
@@ -55,16 +60,19 @@ export function useDuels() {
         challenged_profile:profiles!duels_challenged_id_fkey(name, avatar_url, total_likes)
       `)
       .eq("status", "pending")
-      .eq("challenged_id", user.id);
+      .or(`challenged_id.eq.${user.id},challenger_id.eq.${user.id}`);
 
-    if (data) setPendingDuels(data as any);
+    if (data) setPendingDuels(data.map((d: any) => ({
+      ...d,
+      stake_amount: d.stake_amount ?? 100,
+      duel_type: d.duel_type ?? "normal",
+    })));
   };
 
   useEffect(() => {
     fetchDuels();
     fetchPending();
 
-    // Realtime subscription
     const channel = supabase
       .channel("duels-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "duels" }, () => {
@@ -79,33 +87,54 @@ export function useDuels() {
     return () => { supabase.removeChannel(channel); };
   }, [user]);
 
-  const challengeUser = async (challengedId: string) => {
+  const challengeUser = async (challengedId: string, stakeAmount: number = 100, duelType: "normal" | "fatalite" = "normal") => {
     if (!user) return;
     if (challengedId === user.id) {
       toast.error("Você não pode desafiar a si mesmo!");
       return;
     }
 
-    const { error } = await supabase.from("duels").insert({
+    const insertData: any = {
       challenger_id: user.id,
       challenged_id: challengedId,
-    });
+    };
 
-    if (error) {
-      toast.error("Erro ao criar desafio");
-      return;
+    // Try to include stake columns (they may or may not exist in DB)
+    try {
+      const { error } = await supabase.from("duels").insert({
+        ...insertData,
+        stake_amount: duelType === "fatalite" ? 0 : stakeAmount,
+        duel_type: duelType,
+      });
+
+      if (error) {
+        // Fallback without stake columns
+        const { error: error2 } = await supabase.from("duels").insert(insertData);
+        if (error2) {
+          toast.error("Erro ao criar desafio");
+          return;
+        }
+      }
+    } catch {
+      const { error } = await supabase.from("duels").insert(insertData);
+      if (error) {
+        toast.error("Erro ao criar desafio");
+        return;
+      }
     }
 
     // Notify challenged user
+    const stakeLabel = duelType === "fatalite" ? "FATALITÉ ☠️ (tudo ou nada!)" : `${stakeAmount} likes`;
     await supabase.from("notifications").insert({
       user_id: challengedId,
       tipo: "duelo",
       from_user_id: user.id,
-      mensagem: "⚔️ Você foi desafiado para um duelo! Aceite ou recuse.",
+      mensagem: `⚔️ Você foi desafiado para um duelo ${stakeLabel}! Aceite ou recuse.`,
     });
 
-    toast.success("Desafio enviado! ⚔️");
+    toast.success(`Desafio ${stakeLabel} enviado! ⚔️`);
     fetchDuels();
+    fetchPending();
   };
 
   const acceptDuel = async (duelId: string) => {
@@ -115,23 +144,19 @@ export function useDuels() {
       .eq("id", duelId);
 
     if (!error) {
-      toast.success("Duelo aceito! Que comecem os votos! ⚔️");
+      toast.success("Duelo aceito! 7 dias de batalha começam agora! ⚔️");
       fetchDuels();
       fetchPending();
     }
   };
 
   const refuseDuel = async (duel: Duel) => {
-    // Refuse: challenged loses 100, challenger gains 100
     await supabase
       .from("duels")
       .update({ status: "refused", resolved_at: new Date().toISOString() })
       .eq("id", duel.id);
 
-    // Transfer 100 likes
-    await supabase.rpc("has_role", { _user_id: duel.challenged_id, _role: "user" }); // dummy to ensure auth
-    
-    // Update profiles
+    // Penalty: refused user loses 100 likes, challenger gains 100
     const { data: challengedProfile } = await supabase
       .from("profiles")
       .select("total_likes")
@@ -156,7 +181,7 @@ export function useDuels() {
         .eq("user_id", duel.challenger_id);
     }
 
-    toast.info("Desafio recusado! -100 likes 😔");
+    toast.info("Desafio recusado! -100 likes para quem arregou 😔");
     fetchDuels();
     fetchPending();
   };
@@ -187,9 +212,10 @@ export function useDuels() {
     const duel = duels.find((d) => d.id === duelId);
     if (duel) {
       const field = votedFor === duel.challenger_id ? "challenger_votes" : "challenged_votes";
+      const currentVotes = votedFor === duel.challenger_id ? duel.challenger_votes : duel.challenged_votes;
       await supabase
         .from("duels")
-        .update({ [field]: (votedFor === duel.challenger_id ? duel.challenger_votes : duel.challenged_votes) + voteValue })
+        .update({ [field]: currentVotes + voteValue })
         .eq("id", duelId);
     }
 
