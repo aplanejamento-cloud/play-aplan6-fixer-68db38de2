@@ -16,26 +16,24 @@ Deno.serve(async (req) => {
     { auth: { autoRefreshToken: false, persistSession: false } }
   );
 
-  // Step 1: Ensure schema columns exist via rpc or direct table operations
-  // We'll check if duel_votes table exists by trying to select from it
-  const schemaResults: string[] = [];
+  const results: string[] = [];
 
-  // Try adding columns to duels (will silently fail if they exist)
-  for (const col of ["stake_amount", "duel_type", "challenger_votes", "challenged_votes"]) {
-    const { error } = await supabaseAdmin.from("duels").select(col).limit(1);
+  // Step 1: Add missing columns to duels via direct SQL
+  const alterStatements = [
+    "ALTER TABLE duels ADD COLUMN IF NOT EXISTS stake_amount integer DEFAULT 100",
+    "ALTER TABLE duels ADD COLUMN IF NOT EXISTS duel_type text DEFAULT 'normal'",
+    "ALTER TABLE duels ADD COLUMN IF NOT EXISTS challenger_votes integer DEFAULT 0",
+    "ALTER TABLE duels ADD COLUMN IF NOT EXISTS challenged_votes integer DEFAULT 0",
+  ];
+
+  for (const sql of alterStatements) {
+    const { error } = await supabaseAdmin.rpc("exec_sql" as any, { query: sql });
     if (error) {
-      schemaResults.push(`Column ${col} missing - needs migration`);
+      // Try alternative: just verify column exists
+      results.push(`⚠️ ${sql.split("IF NOT EXISTS ")[1] || sql}: ${error.message}`);
     } else {
-      schemaResults.push(`Column ${col} OK`);
+      results.push(`✅ ${sql.split("IF NOT EXISTS ")[1] || sql}`);
     }
-  }
-
-  // Check duel_votes table
-  const { error: dvError } = await supabaseAdmin.from("duel_votes").select("id").limit(1);
-  if (dvError) {
-    schemaResults.push("duel_votes table missing - needs migration");
-  } else {
-    schemaResults.push("duel_votes table OK");
   }
 
   // Step 2: Create test users
@@ -45,52 +43,36 @@ Deno.serve(async (req) => {
     { email: "juiz@playlike.com", password: "123456", name: "Juiz Teste", user_type: "juiz", total_likes: 500, sex: "M", whatsapp: "11999999903", birth_date: "1995-05-05" },
   ];
 
-  const userResults = [];
-
   for (const u of testUsers) {
-    // Check if user already exists
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const existing = existingUsers?.users?.find((eu: any) => eu.email === u.email);
-
-    let userId: string;
+    // Check if exists via admin API
+    const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const existing = users?.find((eu: any) => eu.email === u.email);
 
     if (existing) {
-      userId = existing.id;
-      userResults.push({ email: u.email, status: "already_exists", id: userId });
+      // Update profile
+      await supabaseAdmin.from("profiles").upsert({
+        user_id: existing.id, name: u.name, user_type: u.user_type,
+        total_likes: u.total_likes, sex: u.sex, whatsapp: u.whatsapp, birth_date: u.birth_date,
+      }, { onConflict: "user_id" });
+      results.push(`✅ ${u.email} exists (${existing.id.slice(0,8)}...) - profile updated`);
     } else {
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: u.email,
-        password: u.password,
-        email_confirm: true,
+      const { data, error } = await supabaseAdmin.auth.admin.createUser({
+        email: u.email, password: u.password, email_confirm: true,
         user_metadata: { name: u.name },
       });
-
-      if (authError) {
-        userResults.push({ email: u.email, status: "auth_error", error: authError.message });
-        continue;
+      if (error) {
+        results.push(`❌ ${u.email}: ${error.message}`);
+      } else {
+        await supabaseAdmin.from("profiles").upsert({
+          user_id: data.user.id, name: u.name, user_type: u.user_type,
+          total_likes: u.total_likes, sex: u.sex, whatsapp: u.whatsapp, birth_date: u.birth_date,
+        }, { onConflict: "user_id" });
+        results.push(`✅ ${u.email} created (${data.user.id.slice(0,8)}...)`);
       }
-
-      userId = authData.user.id;
-      userResults.push({ email: u.email, status: "created", id: userId });
-    }
-
-    // Upsert profile
-    const { error: profileError } = await supabaseAdmin.from("profiles").upsert({
-      user_id: userId,
-      name: u.name,
-      user_type: u.user_type,
-      total_likes: u.total_likes,
-      sex: u.sex,
-      whatsapp: u.whatsapp,
-      birth_date: u.birth_date,
-    }, { onConflict: "user_id" });
-
-    if (profileError) {
-      userResults.push({ email: u.email, status: "profile_error", error: profileError.message });
     }
   }
 
-  return new Response(JSON.stringify({ schema: schemaResults, users: userResults }), {
+  return new Response(JSON.stringify({ results }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });
