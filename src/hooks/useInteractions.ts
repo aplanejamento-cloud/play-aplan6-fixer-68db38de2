@@ -17,7 +17,7 @@ export function usePostInteractions(postId: string) {
         .eq("post_id", postId);
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as unknown as PostInteraction[];
     },
   });
 
