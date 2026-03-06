@@ -103,6 +103,7 @@ const AppContent = () => {
         <Route path="/@:username" element={<ProfileByName />} />
         <Route path="/patrocinador" element={<Patrocinador />} />
         <Route path="/eliminados" element={<Eliminados />} />
+        <Route path="/setup-test" element={<SetupTest />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
 
         {/* Auth-only but game-state-independent */}
