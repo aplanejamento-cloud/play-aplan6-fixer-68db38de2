@@ -132,6 +132,7 @@ const AppContent = () => {
         <Route path="/seguidores" element={<ProtectedRoute><Seguidores /></ProtectedRoute>} />
         <Route path="/desafios-juiz" element={<ProtectedRoute><DesafiosJuiz /></ProtectedRoute>} />
         <Route path="/editor" element={<ProtectedRoute><Editor /></ProtectedRoute>} />
+        <Route path="/temas" element={<ProtectedRoute><Temas /></ProtectedRoute>} />
 
         <Route path="*" element={<CatchAllRoute />} />
       </Routes>
