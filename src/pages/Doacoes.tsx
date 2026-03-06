@@ -50,7 +50,7 @@ const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: 
         return;
       }
 
-      const claimedUserId = (resgate as any).claimed_by_user_id || resgate.user_id;
+      const claimedUserId = (resgate as any).claimed_by_user_id || (resgate as any).usuario_id;
       const likesGastos = (resgate as any).likes_gastos || likesRecebidos;
 
       // Check claimed user has enough likes
