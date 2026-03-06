@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      ajuda_tickets: {
+        Row: {
+          created_at: string | null
+          foto_url: string | null
+          id: string
+          resposta: string | null
+          status: string | null
+          texto: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          foto_url?: string | null
+          id?: string
+          resposta?: string | null
+          status?: string | null
+          texto: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          foto_url?: string | null
+          id?: string
+          resposta?: string | null
+          status?: string | null
+          texto?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       assets_marketing: {
         Row: {
           arquivo_url: string
@@ -851,6 +881,30 @@ export type Database = {
         }
         Relationships: []
       }
+      regras_content: {
+        Row: {
+          created_at: string | null
+          id: string
+          media_type: string
+          media_url: string
+          position: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          media_type?: string
+          media_url: string
+          position?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          media_type?: string
+          media_url?: string
+          position?: number | null
+        }
+        Relationships: []
+      }
       remixes: {
         Row: {
           created_at: string | null
@@ -948,6 +1002,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_media: {
+        Row: {
+          created_at: string | null
+          id: string
+          media_type: string
+          media_url: string
+          position: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          media_type: string
+          media_url: string
+          position?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          media_type?: string
+          media_url?: string
+          position?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_referrals: {
         Row: {
           created_at: string | null
@@ -1011,6 +1092,14 @@ export type Database = {
       increment_juiz_post_count: {
         Args: { p_juiz_id: string }
         Returns: undefined
+      }
+      notify_all_game_state: {
+        Args: { p_game_on: boolean }
+        Returns: undefined
+      }
+      send_mimo: {
+        Args: { p_jogador_id: string; p_juiz_id: string; p_likes: number }
+        Returns: string
       }
     }
     Enums: {
