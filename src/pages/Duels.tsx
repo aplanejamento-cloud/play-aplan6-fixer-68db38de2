@@ -21,7 +21,7 @@ import { differenceInDays, addDays } from "date-fns";
 const Duels = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const { duels, pendingDuels, isLoading, challengeUser, acceptDuel, refuseDuel, voteDuel } = useDuels();
+  const { duels, pendingDuels, isLoading, challengeUser, acceptDuel, refuseDuel, voteDuel, resolveDuel } = useDuels();
   const [searchName, setSearchName] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
@@ -39,6 +39,13 @@ const Duels = () => {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  // Auto-resolve expired duels (7+ days)
+  useEffect(() => {
+    duels
+      .filter((d) => d.status === "active" && getDaysRemaining(d) <= 0)
+      .forEach((d) => resolveDuel(d.id));
+  }, [duels]);
 
   useEffect(() => {
     if (searchName.length < 2) { setSearchResults([]); setShowDropdown(false); return; }
