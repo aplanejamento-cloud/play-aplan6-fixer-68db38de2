@@ -34,6 +34,7 @@ import AdminCulturaStats from "./pages/AdminCulturaStats";
 import Eliminados from "./pages/Eliminados";
 import SosAjuda from "./pages/SosAjuda";
 import AuthCallback from "./pages/AuthCallback";
+import Temas from "./pages/Temas";
 import DailyReportModal from "@/components/retention/DailyReportModal";
 import JuizDoacaoPopup from "@/components/retention/JuizDoacaoPopup";
 
