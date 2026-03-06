@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useRef } from "react";
-import { Home, User, Flame, Swords, Trophy, Gift, MessageSquare, BookOpen, HelpCircle, DollarSign, Download, Gavel, Paintbrush, Crown, BarChart3, Bot, Star, Skull, LifeBuoy } from "lucide-react";
+import { Home, User, Flame, Swords, Trophy, Gift, MessageSquare, BookOpen, HelpCircle, DollarSign, Download, Gavel, Paintbrush, Crown, BarChart3, Bot, Star, Skull, LifeBuoy, Sparkles } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,6 +31,7 @@ const GlobalNav = () => {
     { path: "/top10", label: "Top10", icon: Trophy, requiresGame: true, requiresAuth: true },
     { path: "/premios", label: "Prêmios", icon: Gift, requiresGame: true, requiresAuth: true },
     { path: "/desafios-juiz", label: "Desafios", icon: Gavel, requiresGame: true, requiresAuth: true },
+    { path: "/temas", label: "Temas", icon: Sparkles, requiresGame: true, requiresAuth: true },
     { path: "/editor", label: "Editor", icon: Paintbrush, requiresGame: true, requiresAuth: true },
     { path: "/seguidores", label: "Seguidores", icon: User, requiresGame: true, requiresAuth: true },
     { path: "/convites", label: "Convites", icon: Star, requiresGame: false, requiresAuth: true },
