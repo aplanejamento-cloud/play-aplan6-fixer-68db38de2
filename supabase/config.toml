@@ -30,5 +30,11 @@ verify_jwt = false
 [functions.bot-video]
 verify_jwt = false
 
+[functions.create-test-users]
+verify_jwt = false
+
+[functions.notify-game-state]
+verify_jwt = false
+
 [functions.verify-ticket]
 verify_jwt = false
