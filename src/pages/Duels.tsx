@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDuels, Duel } from "@/hooks/useDuels";
 import { Button } from "@/components/ui/button";
@@ -8,14 +9,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Swords, Heart, Gem, Clock,
-  CheckCircle, XCircle, Crown, Skull,
+  CheckCircle, XCircle, Crown, Skull, Timer,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
 import InviteButton from "@/components/InviteButton";
 import { toast } from "sonner";
+import ChallengeDialog from "@/components/feed/ChallengeDialog";
+import { differenceInDays, addDays } from "date-fns";
 
 const Duels = () => {
+  const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { duels, pendingDuels, isLoading, challengeUser, acceptDuel, refuseDuel, voteDuel } = useDuels();
   const [searchName, setSearchName] = useState("");
@@ -23,9 +27,9 @@ const Duels = () => {
   const [searching, setSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
+  const [showChallengeDialog, setShowChallengeDialog] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -36,7 +40,6 @@ const Duels = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Autocomplete: search as user types (debounced)
   useEffect(() => {
     if (searchName.length < 2) { setSearchResults([]); setShowDropdown(false); return; }
     const timer = setTimeout(async () => {
@@ -63,11 +66,28 @@ const Duels = () => {
     setShowDropdown(false);
   };
 
-  const handleChallenge = () => {
+  const handleOpenChallenge = () => {
     if (!selectedPlayer) return;
-    challengeUser(selectedPlayer.user_id);
+    setShowChallengeDialog(true);
+  };
+
+  const handleChallengeConfirm = (stakeAmount: number, duelType: "normal" | "fatalite") => {
+    if (!selectedPlayer) return;
+    challengeUser(selectedPlayer.user_id, stakeAmount, duelType);
     setSelectedPlayer(null);
     setSearchName("");
+  };
+
+  const getDaysRemaining = (duel: Duel) => {
+    const start = new Date(duel.created_at);
+    const end = addDays(start, 7);
+    const remaining = differenceInDays(end, new Date());
+    return Math.max(0, remaining);
+  };
+
+  const getStakeLabel = (duel: Duel) => {
+    if (duel.duel_type === "fatalite") return "☠️ FATALITÉ";
+    return `${duel.stake_amount || 100} likes`;
   };
 
   const getStatusBadge = (duel: Duel) => {
@@ -83,40 +103,36 @@ const Duels = () => {
     );
     if (duel.status === "pending") {
       if (user && duel.challenged_id === user.id) {
-        const fromName = duel.challenger_profile?.name?.split(" ")[0] || "jogador";
         return (
           <span className="text-xs bg-accent/20 text-accent-foreground px-2 py-0.5 rounded-full flex items-center gap-1">
-            <Clock className="w-3 h-3 animate-pulse" /> Desafio de {fromName}
+            <Clock className="w-3 h-3 animate-pulse" /> Desafio recebido
           </span>
         );
       }
-      const waitingName = duel.challenged_profile?.name?.split(" ")[0] || "jogador";
       return (
         <span className="text-xs bg-accent/20 text-accent-foreground px-2 py-0.5 rounded-full flex items-center gap-1">
-          <Clock className="w-3 h-3 animate-pulse" /> Aguardando {waitingName}
+          <Clock className="w-3 h-3 animate-pulse" /> Aguardando
         </span>
       );
     }
+    const days = getDaysRemaining(duel);
     return (
-      <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded-full flex items-center gap-1">
-        <Swords className="w-3 h-3" /> AO VIVO
+      <span className="text-xs bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full flex items-center gap-1">
+        <Swords className="w-3 h-3" /> AO VIVO · {days}d restantes
       </span>
     );
   };
-
-  const hasVoted = (duelId: string) => false; // simplified, ideally check from server
 
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
       <InviteButton />
       <main className="container mx-auto px-4 py-6 max-w-2xl space-y-6">
-        {/* Title */}
         <div className="text-center space-y-1">
           <h1 className="font-cinzel text-2xl md:text-3xl text-primary glow-gold flex items-center justify-center gap-2">
             <Swords className="w-7 h-7" /> Duelos
           </h1>
-          <p className="text-sm text-muted-foreground">Desafie jogadores! Primeiro a 1M likes vence tudo!</p>
+          <p className="text-sm text-muted-foreground">Desafie jogadores! Aposte likes ou arrisque tudo no FATALITÉ!</p>
         </div>
 
         {/* Search & Challenge */}
@@ -132,7 +148,7 @@ const Duels = () => {
                   className="bg-input border-border"
                 />
                 <Button
-                  onClick={handleChallenge}
+                  onClick={handleOpenChallenge}
                   disabled={!selectedPlayer}
                   className="bg-primary text-primary-foreground"
                 >
@@ -140,7 +156,6 @@ const Duels = () => {
                 </Button>
               </div>
 
-              {/* Autocomplete dropdown */}
               {showDropdown && searchResults.length > 0 && (
                 <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                   {searchResults.map((p) => (
@@ -167,7 +182,6 @@ const Duels = () => {
               {searching && <p className="text-xs text-muted-foreground mt-1">Buscando...</p>}
             </div>
 
-            {/* Selected player preview */}
             {selectedPlayer && (
               <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border border-primary/30">
                 <Avatar className="w-10 h-10 border border-primary">
@@ -184,23 +198,26 @@ const Duels = () => {
           </CardContent>
         </Card>
 
-        {/* Recebidos - duels where I am challenged */}
+        {/* Recebidos */}
         {pendingDuels.filter(d => d.challenged_id === user?.id).length > 0 && (
           <Card className="bg-card/80 border-primary/50 border-2">
             <CardContent className="py-4 space-y-3">
               <h3 className="font-cinzel text-sm text-primary animate-pulse-gold">📥 Recebidos</h3>
               {pendingDuels.filter(d => d.challenged_id === user?.id).map((duel) => (
                 <div key={duel.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-2">
+                  <button
+                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                    onClick={() => navigate(`/profile/${duel.challenger_id}`)}
+                  >
                     <Avatar className="w-10 h-10 border border-primary">
                       <AvatarImage src={duel.challenger_profile?.avatar_url || ""} />
                       <AvatarFallback className="bg-secondary">{duel.challenger_profile?.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <div>
+                    <div className="text-left">
                       <p className="text-sm font-medium text-foreground">{duel.challenger_profile?.name}</p>
-                      <p className="text-xs text-muted-foreground">te desafiou!</p>
+                      <p className="text-xs text-muted-foreground">Aposta: {getStakeLabel(duel)}</p>
                     </div>
-                  </div>
+                  </button>
                   <div className="flex gap-2">
                     <Button size="sm" onClick={() => acceptDuel(duel.id)} className="bg-primary text-primary-foreground">
                       <CheckCircle className="w-4 h-4 mr-1" /> Aceitar
@@ -215,23 +232,26 @@ const Duels = () => {
           </Card>
         )}
 
-        {/* Envios - duels where I am challenger */}
+        {/* Envios aguardando */}
         {pendingDuels.filter(d => d.challenger_id === user?.id).length > 0 && (
           <Card className="bg-card/80 border-accent/30">
             <CardContent className="py-4 space-y-3">
               <h3 className="font-cinzel text-sm text-accent-foreground">📤 Envios aguardando</h3>
               {pendingDuels.filter(d => d.challenger_id === user?.id).map((duel) => (
                 <div key={duel.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-2">
+                  <button
+                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                    onClick={() => navigate(`/profile/${duel.challenged_id}`)}
+                  >
                     <Avatar className="w-10 h-10 border border-border">
                       <AvatarImage src={duel.challenged_profile?.avatar_url || ""} />
                       <AvatarFallback className="bg-secondary">{duel.challenged_profile?.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <div>
+                    <div className="text-left">
                       <p className="text-sm font-medium text-foreground">{duel.challenged_profile?.name}</p>
-                      <p className="text-xs text-muted-foreground">Aguardando resposta</p>
+                      <p className="text-xs text-muted-foreground">Aposta: {getStakeLabel(duel)} · Aguardando</p>
                     </div>
-                  </div>
+                  </button>
                   <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => refuseDuel(duel)}>
                     <XCircle className="w-4 h-4 mr-1" /> Cancelar
                   </Button>
@@ -247,26 +267,35 @@ const Duels = () => {
 
           {isLoading ? (
             [...Array(3)].map((_, i) => <Skeleton key={i} className="h-40 rounded-xl" />)
-          ) : duels.length === 0 ? (
+          ) : duels.filter(d => d.status !== "pending").length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               Nenhum duelo ainda. Seja o primeiro a desafiar! ⚔️
             </div>
           ) : (
-            duels.map((duel) => (
+            duels.filter(d => d.status !== "pending").map((duel) => (
               <Card key={duel.id} className="bg-card/80 border-border overflow-hidden">
                 <CardContent className="py-4 space-y-3">
-                  {/* Status badge */}
-                  <div className="flex justify-between items-center">
+                  {/* Status + stake + timer */}
+                  <div className="flex justify-between items-center flex-wrap gap-2">
                     {getStatusBadge(duel)}
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(duel.created_at).toLocaleDateString("pt-BR")}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${duel.duel_type === "fatalite" ? "bg-destructive/20 text-destructive" : "bg-primary/10 text-primary"}`}>
+                        {getStakeLabel(duel)}
+                      </span>
+                      {duel.status === "active" && (
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Timer className="w-3 h-3" /> {getDaysRemaining(duel)}d
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* VS Layout */}
+                  {/* VS Layout with clickable avatars */}
                   <div className="flex items-center justify-around">
-                    {/* Challenger */}
-                    <div className="flex flex-col items-center gap-1.5">
+                    <button
+                      className="flex flex-col items-center gap-1.5 hover:opacity-80 transition-opacity"
+                      onClick={() => navigate(`/profile/${duel.challenger_id}`)}
+                    >
                       <Avatar className={`w-16 h-16 border-2 ${duel.winner_id === duel.challenger_id ? "border-primary shadow-gold" : "border-border"}`}>
                         <AvatarImage src={duel.challenger_profile?.avatar_url || ""} />
                         <AvatarFallback className="bg-secondary font-cinzel">{duel.challenger_profile?.name?.charAt(0)}</AvatarFallback>
@@ -274,18 +303,20 @@ const Duels = () => {
                       <p className="text-xs font-medium text-foreground text-center max-w-[80px] truncate">{duel.challenger_profile?.name}</p>
                       <p className="text-lg font-bold text-primary">{duel.challenger_votes.toLocaleString("pt-BR")}</p>
                       {duel.winner_id === duel.challenger_id && <Crown className="w-5 h-5 text-primary animate-float" />}
-                    </div>
+                    </button>
 
-                    {/* VS */}
                     <div className="text-center">
                       <span className="font-cinzel text-2xl text-accent glow-purple">VS</span>
-                      {duel.status === "refused" && (
-                        <p className="text-xs text-destructive mt-1">ARREGOU!</p>
+                      {duel.status === "refused" && <p className="text-xs text-destructive mt-1">ARREGOU!</p>}
+                      {duel.duel_type === "fatalite" && duel.status === "active" && (
+                        <p className="text-[10px] text-destructive mt-1 font-bold">☠️ FATALITÉ</p>
                       )}
                     </div>
 
-                    {/* Challenged */}
-                    <div className="flex flex-col items-center gap-1.5">
+                    <button
+                      className="flex flex-col items-center gap-1.5 hover:opacity-80 transition-opacity"
+                      onClick={() => navigate(`/profile/${duel.challenged_id}`)}
+                    >
                       <Avatar className={`w-16 h-16 border-2 ${duel.winner_id === duel.challenged_id ? "border-primary shadow-gold" : "border-border"}`}>
                         <AvatarImage src={duel.challenged_profile?.avatar_url || ""} />
                         <AvatarFallback className="bg-secondary font-cinzel">{duel.challenged_profile?.name?.charAt(0)}</AvatarFallback>
@@ -293,29 +324,19 @@ const Duels = () => {
                       <p className="text-xs font-medium text-foreground text-center max-w-[80px] truncate">{duel.challenged_profile?.name}</p>
                       <p className="text-lg font-bold text-primary">{duel.challenged_votes.toLocaleString("pt-BR")}</p>
                       {duel.winner_id === duel.challenged_id && <Crown className="w-5 h-5 text-primary animate-float" />}
-                    </div>
+                    </button>
                   </div>
 
-                  {/* Vote Buttons (only for active duels) */}
+                  {/* Vote Buttons */}
                   {duel.status === "active" && user && duel.challenger_id !== user.id && duel.challenged_id !== user.id && (
                     <div className="grid grid-cols-2 gap-2 pt-2">
                       <div className="space-y-1.5">
                         <p className="text-xs text-center text-muted-foreground">Votar em {duel.challenger_profile?.name?.split(" ")[0]}</p>
                         <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => voteDuel(duel.id, duel.challenger_id, "play")}
-                            className="flex-1 border-accent text-accent text-xs"
-                          >
+                          <Button size="sm" variant="outline" onClick={() => voteDuel(duel.id, duel.challenger_id, "play")} className="flex-1 border-accent text-accent text-xs">
                             <Gem className="w-3 h-3 mr-1" /> 1 Play
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => voteDuel(duel.id, duel.challenger_id, "likes")}
-                            className="flex-1 border-primary text-primary text-xs"
-                          >
+                          <Button size="sm" variant="outline" onClick={() => voteDuel(duel.id, duel.challenger_id, "likes")} className="flex-1 border-primary text-primary text-xs">
                             <Heart className="w-3 h-3 mr-1" /> 100
                           </Button>
                         </div>
@@ -323,20 +344,10 @@ const Duels = () => {
                       <div className="space-y-1.5">
                         <p className="text-xs text-center text-muted-foreground">Votar em {duel.challenged_profile?.name?.split(" ")[0]}</p>
                         <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => voteDuel(duel.id, duel.challenged_id, "play")}
-                            className="flex-1 border-accent text-accent text-xs"
-                          >
+                          <Button size="sm" variant="outline" onClick={() => voteDuel(duel.id, duel.challenged_id, "play")} className="flex-1 border-accent text-accent text-xs">
                             <Gem className="w-3 h-3 mr-1" /> 1 Play
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => voteDuel(duel.id, duel.challenged_id, "likes")}
-                            className="flex-1 border-primary text-primary text-xs"
-                          >
+                          <Button size="sm" variant="outline" onClick={() => voteDuel(duel.id, duel.challenged_id, "likes")} className="flex-1 border-primary text-primary text-xs">
                             <Heart className="w-3 h-3 mr-1" /> 100
                           </Button>
                         </div>
@@ -349,6 +360,16 @@ const Duels = () => {
           )}
         </div>
       </main>
+
+      {/* Challenge Dialog */}
+      {showChallengeDialog && selectedPlayer && (
+        <ChallengeDialog
+          open={showChallengeDialog}
+          onOpenChange={setShowChallengeDialog}
+          targetName={selectedPlayer.name}
+          onConfirm={handleChallengeConfirm}
+        />
+      )}
     </div>
   );
 };
