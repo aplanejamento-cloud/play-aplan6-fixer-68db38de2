@@ -31,6 +31,7 @@ const GlobalNav = () => {
     { path: "/top10", label: "Top10", icon: Trophy, requiresGame: true, requiresAuth: true },
     { path: "/premios", label: "Prêmios", icon: Gift, requiresGame: true, requiresAuth: true },
     { path: "/desafios-juiz", label: "Desafios", icon: Gavel, requiresGame: true, requiresAuth: true },
+    { path: "/temas", label: "Temas", icon: Sparkles, requiresGame: true, requiresAuth: true },
     { path: "/editor", label: "Editor", icon: Paintbrush, requiresGame: true, requiresAuth: true },
     { path: "/seguidores", label: "Seguidores", icon: User, requiresGame: true, requiresAuth: true },
     { path: "/convites", label: "Convites", icon: Star, requiresGame: false, requiresAuth: true },
