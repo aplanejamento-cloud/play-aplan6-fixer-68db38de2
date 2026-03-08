@@ -26,7 +26,7 @@ const PACOTES_LIKES = [
 const ComprarLikes = () => {
   const [selectedTurbo, setSelectedTurbo] = useState<number | null>(null);
   const [selectedLikes, setSelectedLikes] = useState<number | null>(null);
-  const [pixData, setPixData] = useState<{ qr_code: string; qr_code_base64: string; payment_id: string } | null>(null);
+  const [pixData, setPixData] = useState<{ qr_code: string; qr_code_base64: string; payment_id: string; compra_id: string } | null>(null);
   const [generating, setGenerating] = useState(false);
   const [polling, setPolling] = useState(false);
   const [copied, setCopied] = useState(false);
