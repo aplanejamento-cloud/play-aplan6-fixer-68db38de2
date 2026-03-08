@@ -142,11 +142,17 @@ const PostCard = ({ post }: PostCardProps) => {
             className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
             onClick={() => navigate(`/profile/${post.user_id}`)}
           >
-            <div className={cn("w-10 h-10 rounded-full flex items-center justify-center overflow-hidden", post.author?.eliminated_at ? "bg-muted grayscale" : "bg-primary/20")}>
+            <div className={cn("relative w-10 h-10 rounded-full flex items-center justify-center overflow-hidden", post.author?.eliminated_at ? "bg-muted grayscale" : "bg-primary/20")}>
               {post.author?.avatar_url ? (
                 <img src={post.author.avatar_url} alt={post.author.name} className={cn("w-full h-full object-cover", post.author?.eliminated_at && "grayscale opacity-50")} />
               ) : (
                 <span className="text-primary font-bold text-sm">{post.author?.name?.charAt(0).toUpperCase()}</span>
+              )}
+              {isDesafioPost && (
+                <div className="absolute -bottom-0.5 -right-0.5 flex gap-0">
+                  {post.coroinha && <span className="text-[10px]">👑</span>}
+                  {post.raio && <span className="text-[10px]">⚡</span>}
+                </div>
               )}
             </div>
             <div>
