@@ -136,6 +136,7 @@ const AppContent = () => {
         <Route path="/desafios-juiz" element={<ProtectedRoute><DesafiosJuiz /></ProtectedRoute>} />
         <Route path="/editor" element={<ProtectedRoute><Editor /></ProtectedRoute>} />
         <Route path="/temas" element={<ProtectedRoute><Temas /></ProtectedRoute>} />
+        <Route path="/ebooks" element={<AuthProtectedRoute><Ebooks /></AuthProtectedRoute>} />
 
         <Route path="*" element={<CatchAllRoute />} />
       </Routes>

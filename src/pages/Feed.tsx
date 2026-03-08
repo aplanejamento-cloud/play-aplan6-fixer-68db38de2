@@ -134,6 +134,7 @@ const Feed = () => {
             <CreatePostForm />
             <CulturaPostForm />
             <JuizPostForm />
+            <EbookUploadForm />
           </>
         )}
 
