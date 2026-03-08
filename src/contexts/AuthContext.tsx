@@ -104,6 +104,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               profileData = await fetchProfile(currentSession.user.id);
             }
 
+            // Sync email to profile if missing
+            if (profileData && !profileData.email && currentSession.user.email) {
+              await supabase.from('profiles').update({ email: currentSession.user.email } as any).eq('user_id', currentSession.user.id);
+              (profileData as any).email = currentSession.user.email;
+            }
             setProfile(profileData);
             setIsLoading(false);
           }, 100);
