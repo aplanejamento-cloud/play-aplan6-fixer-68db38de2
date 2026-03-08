@@ -22,6 +22,8 @@ export interface Post {
   additional_images?: string[];
   multiplicador?: number | null;
   tema_id?: string | null;
+  coroinha?: boolean | null;
+  raio?: boolean | null;
 }
 
 export interface PostInteraction {

@@ -9,7 +9,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useRemixCount } from "@/hooks/useRemix";
 import { useDuels } from "@/hooks/useDuels";
 import { Button } from "@/components/ui/button";
-import { Heart, Flame, Bomb, UserPlus, UserMinus, Trash2, Crown, User, Music, Gift, Repeat2, Sparkles, Swords } from "lucide-react";
+import { Heart, Flame, Bomb, UserPlus, UserMinus, Trash2, Crown, User, Music, Gift, Repeat2, Sparkles, Swords, Zap, Share2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -106,8 +106,35 @@ const PostCard = ({ post }: PostCardProps) => {
     );
   };
 
+  const isDesafioPost = !!post.coroinha || !!post.raio;
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/feed`;
+    const text = `${post.author?.name || "Alguém"} publicou no PlayLike! 🎉`;
+    if (navigator.share) {
+      try { await navigator.share({ title: "PlayLike", text, url }); } catch {}
+    } else {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      toast.success("Link copiado! 📋");
+    }
+  };
+
   return (
     <article className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Desafio approved banner */}
+      {isDesafioPost && (
+        <div className="bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 border-b border-primary/30 px-3 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {post.coroinha && <span className="text-lg">👑</span>}
+            {post.raio && <span className="text-lg">⚡</span>}
+            <span className="text-xs font-bold text-primary">Desafio Aprovado!</span>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleShare} className="h-7 text-xs border-primary/30 text-primary hover:bg-primary/10">
+            <Share2 className="w-3.5 h-3.5 mr-1" />Compartilhar
+          </Button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="p-3">
         <header className="flex items-start justify-between">
@@ -115,11 +142,17 @@ const PostCard = ({ post }: PostCardProps) => {
             className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
             onClick={() => navigate(`/profile/${post.user_id}`)}
           >
-            <div className={cn("w-10 h-10 rounded-full flex items-center justify-center overflow-hidden", post.author?.eliminated_at ? "bg-muted grayscale" : "bg-primary/20")}>
+            <div className={cn("relative w-10 h-10 rounded-full flex items-center justify-center overflow-hidden", post.author?.eliminated_at ? "bg-muted grayscale" : "bg-primary/20")}>
               {post.author?.avatar_url ? (
                 <img src={post.author.avatar_url} alt={post.author.name} className={cn("w-full h-full object-cover", post.author?.eliminated_at && "grayscale opacity-50")} />
               ) : (
                 <span className="text-primary font-bold text-sm">{post.author?.name?.charAt(0).toUpperCase()}</span>
+              )}
+              {isDesafioPost && (
+                <div className="absolute -bottom-0.5 -right-0.5 flex gap-0">
+                  {post.coroinha && <span className="text-[10px]">👑</span>}
+                  {post.raio && <span className="text-[10px]">⚡</span>}
+                </div>
               )}
             </div>
             <div>
