@@ -43,7 +43,7 @@ const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: 
         return;
       }
 
-      if ((resgate as any).likes_transferidos) {
+      if (resgate.likes_transferidos) {
         setResult({ success: false, message: "Já transferido anteriormente" });
         toast.error("Já transferido");
         setVerifying(false);
