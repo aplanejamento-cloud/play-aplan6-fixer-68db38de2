@@ -32,6 +32,7 @@ import AdminPixLogs from "./pages/AdminPixLogs";
 import AdminPremiumUsers from "./pages/AdminPremiumUsers";
 import AdminCulturaStats from "./pages/AdminCulturaStats";
 import AdminResgates from "./pages/AdminResgates";
+import AdminAnalytics from "./pages/AdminAnalytics";
 import Eliminados from "./pages/Eliminados";
 import SosAjuda from "./pages/SosAjuda";
 import AuthCallback from "./pages/AuthCallback";
@@ -120,6 +121,7 @@ const AppContent = () => {
         <Route path="/admin/premium-users" element={<AuthProtectedRoute><AdminPremiumUsers /></AuthProtectedRoute>} />
         <Route path="/admin/cultura-stats" element={<AuthProtectedRoute><AdminCulturaStats /></AuthProtectedRoute>} />
         <Route path="/admin/resgates" element={<AuthProtectedRoute><AdminResgates /></AuthProtectedRoute>} />
+        <Route path="/analytics" element={<AuthProtectedRoute><AdminAnalytics /></AuthProtectedRoute>} />
         <Route path="/sos-ajuda" element={<AuthProtectedRoute><SosAjuda /></AuthProtectedRoute>} />
 
         {/* Game-state protected */}
