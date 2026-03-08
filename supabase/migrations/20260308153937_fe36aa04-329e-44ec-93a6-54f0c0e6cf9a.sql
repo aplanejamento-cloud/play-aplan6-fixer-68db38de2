@@ -1,0 +1,1 @@
+UPDATE profiles SET total_likes = 100 WHERE user_id = 'c0f361e0-59f4-4aea-9233-d03dfd92052c'
