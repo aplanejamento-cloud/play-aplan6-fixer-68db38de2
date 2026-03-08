@@ -10,7 +10,7 @@ import CulturaCarousel from "@/components/feed/CulturaCarousel";
 import FeedTabs from "@/components/feed/FeedTabs";
 import FeedList from "@/components/feed/FeedList";
 import PaymentModal from "@/components/feed/PaymentModal";
-import EditorModal from "@/components/feed/EditorModal";
+import UnifiedEditorModal from "@/components/feed/UnifiedEditorModal";
 import EbookUploadForm from "@/components/feed/EbookUploadForm";
 import FeedHighlight from "@/components/retention/FeedHighlight";
 import { FeedTab } from "@/types/feed";
