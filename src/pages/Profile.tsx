@@ -27,7 +27,7 @@ import { toast } from "sonner";
 import AppHeader from "@/components/AppHeader";
 import InviteButton from "@/components/InviteButton";
 import PostCard from "@/components/feed/PostCard";
-import AvatarCropDialog from "@/components/AvatarCropDialog";
+import UnifiedEditorModal from "@/components/feed/UnifiedEditorModal";
 import StreakBadge from "@/components/retention/StreakBadge";
 
 const Profile = () => {
