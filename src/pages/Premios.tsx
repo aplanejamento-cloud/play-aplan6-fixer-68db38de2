@@ -1,4 +1,5 @@
 import { useGameState } from "@/hooks/useGameState";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { usePremios, useResgatarPremio, Premio } from "@/hooks/usePremios";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -140,7 +141,7 @@ const PrizeCard = ({ premio, userLikes, onResgatar, isRescuing }: {
       </div>
       <div className="flex-1 p-4 flex flex-col gap-2">
         {isFinalistOnly && (
-          <Badge className="bg-accent text-accent-foreground text-xs mb-1">🏆 Somente Para Finalista</Badge>
+          <Badge className="bg-accent text-accent-foreground text-xs mb-1">🏆 Somente Para Finalista — ENTREGA MANUAL</Badge>
         )}
         {premio.titulo && <h3 className="font-montserrat font-bold text-foreground text-sm line-clamp-2">{premio.titulo}</h3>}
         {premio.descricao && <p className="text-xs text-muted-foreground line-clamp-2">{premio.descricao}</p>}
@@ -274,6 +275,7 @@ const TicketCard = ({ resgate, premioData, onCancel }: { resgate: any; premioDat
 const Premios = () => {
   const { user } = useAuth();
   const { gameState } = useGameState();
+  const { isAdmin } = useIsAdmin();
   const resgatar = useResgatarPremio();
   const [rescuingId, setRescuingId] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState("all");
@@ -400,9 +402,10 @@ const Premios = () => {
           <CityFilter filtroEstado={filtroEstado} filtroCidade={filtroCidade} setFiltroCidade={setFiltroCidade} />
         </div>
 
-        {([1, 2] as const).map((p) => (
-          <PrateleiraSection key={p} prateleira={p} userLikes={userLikes} onResgatar={handleResgatar} rescuingId={rescuingId} filtroEstado={filtroEstado} filtroCidade={filtroCidade} />
-        ))}
+        {isAdmin && (
+          <PrateleiraSection prateleira={1} userLikes={userLikes} onResgatar={handleResgatar} rescuingId={rescuingId} filtroEstado={filtroEstado} filtroCidade={filtroCidade} />
+        )}
+        <PrateleiraSection prateleira={2} userLikes={userLikes} onResgatar={handleResgatar} rescuingId={rescuingId} filtroEstado={filtroEstado} filtroCidade={filtroCidade} />
 
         {meusResgates.length > 0 && (
           <section className="space-y-3 px-4">

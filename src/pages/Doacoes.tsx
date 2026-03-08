@@ -30,10 +30,10 @@ const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: 
     setResult(null);
     try {
       // Find resgate by ticket code
-      const { data: resgate, error: rErr } = await (supabase
+      const { data: resgate, error: rErr } = await supabase
         .from("resgates")
-        .select("*") as any)
-        .eq("senha_unica", code)
+        .select("*")
+        .eq("codigo_ticket", code)
         .maybeSingle();
 
       if (rErr || !resgate) {
@@ -43,15 +43,15 @@ const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: 
         return;
       }
 
-      if ((resgate as any).likes_transferidos) {
+      if (resgate.likes_transferidos) {
         setResult({ success: false, message: "Já transferido anteriormente" });
         toast.error("Já transferido");
         setVerifying(false);
         return;
       }
 
-      const claimedUserId = (resgate as any).claimed_by_user_id || (resgate as any).usuario_id;
-      const likesGastos = (resgate as any).likes_gastos || likesRecebidos;
+      const claimedUserId = resgate.usuario_id;
+      const likesGastos = resgate.likes_gastos || likesRecebidos;
 
       // Check claimed user has enough likes
       const { data: claimedUser } = await supabase
@@ -60,7 +60,7 @@ const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: 
         .eq("user_id", claimedUserId)
         .single();
 
-      if (!claimedUser || (claimedUser as any).total_likes < likesGastos) {
+      if (!claimedUser || claimedUser.total_likes! < likesGastos) {
         setResult({ success: false, message: "Usuário sem likes suficientes" });
         toast.error("Usuário sem likes suficientes");
         setVerifying(false);
@@ -82,30 +82,26 @@ const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: 
 
       // Transfer likes: user -> doador
       await supabase.from("profiles")
-        .update({ total_likes: (doador as any).total_likes + likesGastos })
+        .update({ total_likes: doador!.total_likes! + likesGastos })
         .eq("user_id", doacaoUserId);
 
       await supabase.from("profiles")
-        .update({ total_likes: (claimedUser as any).total_likes - likesGastos })
+        .update({ total_likes: claimedUser.total_likes! - likesGastos })
         .eq("user_id", claimedUserId);
 
       // Mark resgate as transferred
       await supabase.from("resgates")
-        .update({ likes_transferidos: true, status: "retirado" } as any)
+        .update({ likes_transferidos: true, status: "Aprovado e entregue" })
         .eq("id", resgate.id);
 
       // Decrement stock now that doador verified
-      const premioId = (resgate as any).premio_id;
+      const premioId = resgate.premio_id;
       if (premioId) {
         const { data: premio } = await supabase.from("premios").select("estoque").eq("id", premioId).single();
         if (premio) {
-          await supabase.from("premios").update({ estoque: Math.max(0, (premio as any).estoque - 1) }).eq("id", premioId);
+          await supabase.from("premios").update({ estoque: Math.max(0, premio.estoque! - 1) }).eq("id", premioId);
         }
       }
-
-      await supabase.from("doacoes_premios")
-        .update({ verified_by_doador: true } as any)
-        .eq("id", doacaoId);
 
       qc.invalidateQueries({ queryKey: ["minhas_doacoes"] });
       qc.invalidateQueries({ queryKey: ["premios"] });
@@ -346,7 +342,7 @@ const Doacoes = () => {
                     </div>
                     {isApproved ? (
                       <Badge className="flex items-center gap-1 bg-primary/20 text-primary border-primary/30">
-                        <CheckCircle2 className="w-3 h-3" /> Aprovada
+                        <CheckCircle2 className="w-3 h-3" /> Aprovado e entregue
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="flex items-center gap-1 text-muted-foreground">

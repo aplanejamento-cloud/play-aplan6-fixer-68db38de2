@@ -1020,7 +1020,9 @@ export type Database = {
           endereco_completo: string | null
           id: string
           likes_gastos: number | null
+          likes_transferidos: boolean | null
           premio_id: string
+          status: string | null
           usuario_id: string
         }
         Insert: {
@@ -1029,7 +1031,9 @@ export type Database = {
           endereco_completo?: string | null
           id?: string
           likes_gastos?: number | null
+          likes_transferidos?: boolean | null
           premio_id: string
+          status?: string | null
           usuario_id: string
         }
         Update: {
@@ -1038,7 +1042,9 @@ export type Database = {
           endereco_completo?: string | null
           id?: string
           likes_gastos?: number | null
+          likes_transferidos?: boolean | null
           premio_id?: string
+          status?: string | null
           usuario_id?: string
         }
         Relationships: [
