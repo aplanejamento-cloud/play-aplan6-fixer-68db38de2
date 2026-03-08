@@ -106,8 +106,35 @@ const PostCard = ({ post }: PostCardProps) => {
     );
   };
 
+  const isDesafioPost = !!post.coroinha || !!post.raio;
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/feed`;
+    const text = `${post.author?.name || "Alguém"} publicou no PlayLike! 🎉`;
+    if (navigator.share) {
+      try { await navigator.share({ title: "PlayLike", text, url }); } catch {}
+    } else {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      toast.success("Link copiado! 📋");
+    }
+  };
+
   return (
     <article className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Desafio approved banner */}
+      {isDesafioPost && (
+        <div className="bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 border-b border-primary/30 px-3 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {post.coroinha && <span className="text-lg">👑</span>}
+            {post.raio && <span className="text-lg">⚡</span>}
+            <span className="text-xs font-bold text-primary">Desafio Aprovado!</span>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleShare} className="h-7 text-xs border-primary/30 text-primary hover:bg-primary/10">
+            <Share2 className="w-3.5 h-3.5 mr-1" />Compartilhar
+          </Button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="p-3">
         <header className="flex items-start justify-between">
