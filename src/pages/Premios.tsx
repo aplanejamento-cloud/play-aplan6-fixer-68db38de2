@@ -1,4 +1,5 @@
 import { useGameState } from "@/hooks/useGameState";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { usePremios, useResgatarPremio, Premio } from "@/hooks/usePremios";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
