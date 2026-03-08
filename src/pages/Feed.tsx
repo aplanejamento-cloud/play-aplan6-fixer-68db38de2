@@ -149,7 +149,7 @@ const Feed = () => {
         <FeedList tab={activeTab} />
       </main>
       <PaymentModal open={showPayment} onOpenChange={handlePaymentClose} />
-      <EditorModal open={showEditor} onOpenChange={setShowEditor} />
+      <UnifiedEditorModal open={showEditor} onOpenChange={setShowEditor} mode="post" />
     </div>
   );
 };

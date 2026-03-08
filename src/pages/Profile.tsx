@@ -641,25 +641,23 @@ const Profile = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Avatar Crop Dialog */}
-        {cropImageSrc && (
-          <AvatarCropDialog
-            open={showCropDialog}
-            onOpenChange={setShowCropDialog}
-            imageSrc={cropImageSrc}
-            onCropComplete={handleCropComplete}
-          />
-        )}
+        {/* Avatar Editor */}
+        <UnifiedEditorModal
+          open={showCropDialog}
+          onOpenChange={setShowCropDialog}
+          mode="avatar"
+          initialImage={cropImageSrc || undefined}
+          onAvatarComplete={handleCropComplete}
+        />
 
-        {/* Photo Crop Dialog */}
-        {photoCropSrc && (
-          <AvatarCropDialog
-            open={showPhotoCrop}
-            onOpenChange={setShowPhotoCrop}
-            imageSrc={photoCropSrc}
-            onCropComplete={handlePhotoCropComplete}
-          />
-        )}
+        {/* Photo Editor */}
+        <UnifiedEditorModal
+          open={showPhotoCrop}
+          onOpenChange={setShowPhotoCrop}
+          mode="avatar"
+          initialImage={photoCropSrc || undefined}
+          onAvatarComplete={handlePhotoCropComplete}
+        />
 
         {/* Avatar Zoom Modal */}
         <Dialog open={showAvatarZoom} onOpenChange={setShowAvatarZoom}>
