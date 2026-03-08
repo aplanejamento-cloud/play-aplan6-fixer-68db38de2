@@ -13,7 +13,7 @@ export function usePosts(tab: FeedTab) {
       .from("posts")
       .select(`
         *,
-        author:profiles!posts_user_id_fkey(id, name, avatar_url, user_type, is_bot)
+        author:profiles!posts_user_id_fkey(id, name, avatar_url, user_type, is_bot, eliminated_at)
       `)
       .gt("expires_at", new Date().toISOString())
       .eq("deletado", false);
