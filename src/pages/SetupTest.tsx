@@ -83,6 +83,18 @@ const SetupTest = () => {
     }
   };
 
+  const handleLoginAdmin = async (email: string) => {
+    setLoginResult("Fazendo login admin " + email + "...");
+    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signInWithPassword({ email, password: "admin123" });
+    if (error) {
+      setLoginResult("❌ " + error.message);
+    } else {
+      setLoginResult("✅ Admin Login OK! Redirecionando para /feed...");
+      setTimeout(() => { window.location.href = "/feed"; }, 1000);
+    }
+  };
+
   const handleLoginDuels = async (email: string) => {
     setLoginResult("Fazendo login " + email + " → /duels...");
     await supabase.auth.signOut();
@@ -113,6 +125,13 @@ const SetupTest = () => {
         </button>
         <button onClick={() => handleLogin("juiz@playlike.com")} className="px-4 py-2 bg-primary text-primary-foreground rounded font-bold">
           Juiz → Feed
+        </button>
+      </div>
+
+      <h2 className="text-lg font-bold mb-2">👑 Admin Login → Feed</h2>
+      <div className="flex gap-4 flex-wrap mb-4">
+        <button onClick={() => handleLoginAdmin("aplanejamento@gmail.com")} className="px-4 py-2 bg-yellow-600 text-white rounded font-bold">
+          Admin (aplanejamento) → Feed
         </button>
       </div>
 

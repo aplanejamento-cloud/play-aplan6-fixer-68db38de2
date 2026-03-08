@@ -36,11 +36,12 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Step 2: Create test users
+  // Step 2: Create test users + admin
   const testUsers = [
-    { email: "teste1@playlike.com", password: "123456", name: "Jogador Teste 1", user_type: "jogador", total_likes: 1000, sex: "M", whatsapp: "11999999901", birth_date: "2000-01-01" },
-    { email: "teste2@playlike.com", password: "123456", name: "Jogador Teste 2", user_type: "jogador", total_likes: 800, sex: "F", whatsapp: "11999999902", birth_date: "2000-02-02" },
-    { email: "juiz@playlike.com", password: "123456", name: "Juiz Teste", user_type: "juiz", total_likes: 500, sex: "M", whatsapp: "11999999903", birth_date: "1995-05-05" },
+    { email: "teste1@playlike.com", password: "123456", name: "Jogador Teste 1", user_type: "jogador", total_likes: 1000, sex: "M", whatsapp: "11999999901", birth_date: "2000-01-01", isAdmin: false },
+    { email: "teste2@playlike.com", password: "123456", name: "Jogador Teste 2", user_type: "jogador", total_likes: 800, sex: "F", whatsapp: "11999999902", birth_date: "2000-02-02", isAdmin: false },
+    { email: "juiz@playlike.com", password: "123456", name: "Juiz Teste", user_type: "juiz", total_likes: 500, sex: "M", whatsapp: "11999999903", birth_date: "1995-05-05", isAdmin: false },
+    { email: "aplanejamento@gmail.com", password: "admin123", name: "Admin PlayLike", user_type: "jogador", total_likes: 2000, sex: "M", whatsapp: "11999999900", birth_date: "1990-01-01", isAdmin: true },
   ];
 
   for (const u of testUsers) {
@@ -67,8 +68,23 @@ Deno.serve(async (req) => {
           user_id: data.user.id, name: u.name, user_type: u.user_type,
           total_likes: u.total_likes, sex: u.sex, whatsapp: u.whatsapp, birth_date: u.birth_date,
         }, { onConflict: "user_id" });
-        results.push(`✅ ${u.email} created (${data.user.id.slice(0,8)}...)`);
+        if (u.isAdmin) {
+          await supabaseAdmin.from("user_roles").upsert({
+            user_id: data.user.id, role: "admin",
+          }, { onConflict: "user_id,role" });
+          results.push(`✅ ${u.email} created + ADMIN role`);
+        } else {
+          results.push(`✅ ${u.email} created (${data.user.id.slice(0,8)}...)`);
+        }
       }
+    }
+
+    // If existing admin, ensure role exists
+    if (existing && u.isAdmin) {
+      await supabaseAdmin.from("user_roles").upsert({
+        user_id: existing.id, role: "admin",
+      }, { onConflict: "user_id,role" });
+      results.push(`   → admin role ensured for ${u.email}`);
     }
   }
 
