@@ -13,22 +13,6 @@ serve(async (req) => {
   }
 
   try {
-    const MP_ACCESS_TOKEN = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
-
-    if (!MP_ACCESS_TOKEN) {
-      return new Response(
-        JSON.stringify({
-          error: "MERCADOPAGO_ACCESS_TOKEN não configurado",
-          placeholder: true,
-          // Return mock data for testing without real MP
-          qr_code: "PLACEHOLDER_PIX_CODE_00020126580014br.gov.bcb.pix0136playlike",
-          qr_code_base64: "",
-          payment_id: "placeholder_" + Date.now(),
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     // Validate auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -44,22 +28,63 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: "Token inválido" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const userId = claimsData.claims.sub as string;
+    const userId = user.id;
     const { tipo, valor, likes } = await req.json();
 
     if (!tipo || !valor) {
       return new Response(
         JSON.stringify({ error: "tipo e valor são obrigatórios" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const MP_ACCESS_TOKEN = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
+
+    if (!MP_ACCESS_TOKEN) {
+      // Placeholder mode - still insert record in DB
+      const qrCode = "PLACEHOLDER_PIX_CODE_00020126580014br.gov.bcb.pix0136playlike";
+
+      const { data: compra, error: insertError } = await supabaseAdmin
+        .from("compras_pix")
+        .insert({
+          usuario_id: userId,
+          valor: Number(valor),
+          likes_adquiridos: Number(likes) || 0,
+          pix_copia: qrCode,
+          status: "pendente",
+          tipo,
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error("[create-pix-payment] Insert error:", insertError);
+      }
+
+      console.log("[create-pix-payment] Placeholder mode - compra created:", compra?.id);
+
+      return new Response(
+        JSON.stringify({
+          placeholder: true,
+          qr_code: qrCode,
+          qr_code_base64: "",
+          payment_id: "placeholder_" + Date.now(),
+          compra_id: compra?.id || null,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -101,26 +126,22 @@ serve(async (req) => {
     const qrCode = mpData.point_of_interaction?.transaction_data?.qr_code || "";
     const qrBase64 = mpData.point_of_interaction?.transaction_data?.qr_code_base64 || "";
 
-    // Save to compras_pix using service role
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    await supabaseAdmin.from("compras_pix").insert({
+    // Save to compras_pix
+    const { data: compra } = await supabaseAdmin.from("compras_pix").insert({
       usuario_id: userId,
       valor: Number(valor),
       likes_adquiridos: Number(likes) || 0,
       pix_copia: qrCode,
       status: "pendente",
       tipo,
-    });
+    }).select().single();
 
     return new Response(
       JSON.stringify({
         qr_code: qrCode,
         qr_code_base64: qrBase64,
         payment_id: mpData.id,
+        compra_id: compra?.id || null,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
