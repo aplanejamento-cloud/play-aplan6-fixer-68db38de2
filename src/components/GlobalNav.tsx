@@ -99,6 +99,7 @@ const GlobalNav = () => {
         const badgeCount =
           item.path === "/admin/resgates" ? pendingResgates :
           item.path === "/doacoes" && isAdmin ? pendingDoacoes : 0;
+        const showLowLikes = (item as any).lowLikes && totalLikes < 500;
         return (
           <button
             key={item.path}
