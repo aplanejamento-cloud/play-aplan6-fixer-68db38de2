@@ -270,6 +270,16 @@ const PostCard = ({ post }: PostCardProps) => {
           <InteractionButton type="love" icon={Flame} label="Lacrou" activeClass="bg-orange-500/20 text-orange-500" value="+10" />
           <InteractionButton type="bomb" icon={Bomb} label="Bomba" activeClass="bg-destructive/20 text-destructive" value="-10" />
           
+          {hasMedia && (
+            <button
+              onClick={handleDownloadMedia}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-muted/50 text-muted-foreground hover:bg-muted transition-all"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Baixar</span>
+            </button>
+          )}
+          
           {/* Challenge button - only for other jogadores */}
           {user && !isOwnPost && isTargetJogador && profile?.user_type === "jogador" && (
             <button
