@@ -136,7 +136,7 @@ const Profile = () => {
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
   const [showCropDialog, setShowCropDialog] = useState(false);
   const [showAvatarZoom, setShowAvatarZoom] = useState(false);
-  const [showEmail, setShowEmail] = useState((profile as any)?.show_email_public ?? false);
+  const [showEmail, setShowEmail] = useState(profile?.show_email_public ?? false);
 
   const { following } = useFollows();
   const toggleFollow = useToggleFollow();
