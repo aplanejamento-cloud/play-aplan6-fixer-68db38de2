@@ -111,7 +111,7 @@ const ComprarLikes = () => {
       // Handle turbo/premium activation
       if (data.tipo === "turbo" || data.tipo === "turbo_bomba") {
         const end = new Date();
-        end.setDate(end.getDate() + 30);
+        end.setDate(end.getDate() + 7);
         await supabase.from("profiles").update({
           multiplicador_ativo: data.tipo === "turbo_bomba" ? 10 : 10,
           multiplicador_end: end.toISOString(),
