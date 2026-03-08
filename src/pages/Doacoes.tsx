@@ -50,8 +50,8 @@ const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: 
         return;
       }
 
-      const claimedUserId = (resgate as any).claimed_by_user_id || (resgate as any).usuario_id;
-      const likesGastos = (resgate as any).likes_gastos || likesRecebidos;
+      const claimedUserId = resgate.usuario_id;
+      const likesGastos = resgate.likes_gastos || likesRecebidos;
 
       // Check claimed user has enough likes
       const { data: claimedUser } = await supabase
