@@ -282,6 +282,11 @@ const Premios = () => {
   const [rescuingId, setRescuingId] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState("all");
   const [filtroCidade, setFiltroCidade] = useState("all");
+  const [senhaModal, setSenhaModal] = useState<{ open: boolean; premio: Premio | null }>({ open: false, premio: null });
+  const [senha, setSenha] = useState("");
+  const [senhaError, setSenhaError] = useState("");
+  const [senhaLoading, setSenhaLoading] = useState(false);
+  const [showSenha, setShowSenha] = useState(false);
   const qc = useQueryClient();
 
   const { data: profile } = useQuery({
@@ -311,15 +316,11 @@ const Premios = () => {
     try {
       const resgate = meusResgates.find((r: any) => r.id === resgateId);
       if (!resgate) return;
-      // Delete the resgate completely (it will disappear from UI)
       await supabase.from("resgates").delete().eq("id", resgateId);
-      // Refund likes to user
       const { data: prof } = await supabase.from("profiles").select("total_likes").eq("user_id", user!.id).single();
       if (prof) {
         await supabase.from("profiles").update({ total_likes: prof.total_likes + resgate.likes_gastos }).eq("user_id", user!.id);
       }
-      // Note: estoque is NOT incremented here because it was never decremented on selection
-      // (estoque only decrements when doador verifies senha)
       qc.invalidateQueries({ queryKey: ["meus_resgates"] });
       qc.invalidateQueries({ queryKey: ["profile_likes"] });
       qc.invalidateQueries({ queryKey: ["premios"] });
@@ -331,18 +332,48 @@ const Premios = () => {
 
   const userLikes = profile?.total_likes ?? 0;
 
-  const handleResgatar = async (premio: Premio) => {
+  // Open modal instead of directly exchanging
+  const handleResgatar = (premio: Premio) => {
     if (!user) return;
     if (userLikes < premio.likes_custo) { toast.error("Não tem likes suficientes!"); return; }
     if (userLikes - premio.likes_custo === 0) { toast.error("⚠️ Ganhe mais likes antes! Ficar com 0 likes te elimina do jogo por 3 dias."); return; }
-    const ticketCode = generateTicketCode();
-    const enderecoCompleto = [premio.endereco, premio.numero, premio.bairro, premio.cidade, premio.estado].filter(Boolean).join(", ");
-    setRescuingId(premio.id);
+    setSenha("");
+    setSenhaError("");
+    setShowSenha(false);
+    setSenhaModal({ open: true, premio });
+  };
+
+  // Confirm exchange with password verification
+  const handleConfirmTroca = async () => {
+    if (!user || !senhaModal.premio) return;
+    if (!senha.trim()) { setSenhaError("Digite sua senha"); return; }
+    setSenhaLoading(true);
+    setSenhaError("");
     try {
+      // Verify password by trying to sign in
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: user.email!,
+        password: senha,
+      });
+      if (authError) {
+        setSenhaError("Senha incorreta");
+        setSenhaLoading(false);
+        return;
+      }
+      // Password correct — proceed with exchange
+      const premio = senhaModal.premio;
+      const ticketCode = generateTicketCode();
+      const enderecoCompleto = [premio.endereco, premio.numero, premio.bairro, premio.cidade, premio.estado].filter(Boolean).join(", ");
+      setRescuingId(premio.id);
+      setSenhaModal({ open: false, premio: null });
       await resgatar.mutateAsync({ premioId: premio.id, userId: user.id, likesCusto: premio.likes_custo, codigoTicket: ticketCode, enderecoCompleto: enderecoCompleto || null });
       toast.success(`🎫 Seu Ticket Retirada: ${ticketCode}`, { duration: 10000 });
-    } catch { /* handled in hook */ }
-    setRescuingId(null);
+      setRescuingId(null);
+    } catch {
+      toast.error("Erro ao trocar prêmio");
+      setRescuingId(null);
+    }
+    setSenhaLoading(false);
   };
 
   if (!user) {
