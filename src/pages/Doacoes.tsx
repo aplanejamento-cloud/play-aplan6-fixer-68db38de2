@@ -30,10 +30,10 @@ const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: 
     setResult(null);
     try {
       // Find resgate by ticket code
-      const { data: resgate, error: rErr } = await (supabase
+      const { data: resgate, error: rErr } = await supabase
         .from("resgates")
-        .select("*") as any)
-        .eq("senha_unica", code)
+        .select("*")
+        .eq("codigo_ticket", code)
         .maybeSingle();
 
       if (rErr || !resgate) {
