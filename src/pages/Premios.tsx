@@ -185,7 +185,7 @@ const PrateleiraSection = ({ prateleira, userLikes, onResgatar, rescuingId, filt
   const { data: premios = [], isLoading } = usePremios(prateleira);
   const info = PRATELEIRA_INFO[prateleira];
   const availablePremios = premios.filter((p) => {
-    if (p.estoque <= 0) return false;
+    // Show items with estoque 0 as "ESGOTADO" instead of hiding them
     if (filtroEstado && filtroEstado !== "all" && p.estado) {
       if (!p.estado.toLowerCase().includes(filtroEstado.toLowerCase())) return false;
     }
