@@ -18,7 +18,7 @@ const loggedOutItems = [
 const GlobalNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { gameState } = useGameState();
   const { isAdmin } = useIsAdmin();
   const gameOn = gameState?.game_on ?? false;
@@ -45,8 +45,11 @@ const GlobalNav = () => {
     },
   });
 
+  const totalLikes = profile?.total_likes ?? 9999;
+
   const allItems = [
     { path: "/", label: "Home", icon: Home, requiresGame: false, requiresAuth: false },
+    { path: "/comprar-likes", label: "💰 Carregar Likes", icon: DollarSign, requiresGame: false, requiresAuth: true, lowLikes: true },
     { path: "/doacoes", label: "Doações", icon: Gift, requiresGame: false, requiresAuth: true },
     { path: "/patrocinador", label: "Patrocínio", icon: Crown, requiresGame: false, requiresAuth: false },
     { path: "/profile", label: "Perfil", icon: User, requiresGame: false, requiresAuth: true },
@@ -96,6 +99,7 @@ const GlobalNav = () => {
         const badgeCount =
           item.path === "/admin/resgates" ? pendingResgates :
           item.path === "/doacoes" && isAdmin ? pendingDoacoes : 0;
+        const showLowLikes = (item as any).lowLikes && totalLikes < 500;
         return (
           <button
             key={item.path}
@@ -113,6 +117,11 @@ const GlobalNav = () => {
             {badgeCount > 0 && (
               <Badge className="bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
                 {badgeCount}
+              </Badge>
+            )}
+            {showLowLikes && (
+              <Badge className="bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
+                !
               </Badge>
             )}
           </button>
