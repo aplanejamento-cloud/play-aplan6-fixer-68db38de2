@@ -231,7 +231,9 @@ const PremiosTab = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{p.titulo || "Sem título"}</p>
-                <p className="text-xs text-muted-foreground">{p.likes_custo} likes · Est: {p.estoque} · P{p.tipo_prateleira}</p>
+                <p className="text-xs text-muted-foreground">
+                  {(p as any).finalist_only ? "🏆 FINALISTA" : `${p.likes_custo} likes`} · Est: {p.estoque} · P{p.tipo_prateleira}
+                </p>
               </div>
               <Button variant="destructive" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => removerPremio.mutate(p.id)}>
                 <Trash2 className="w-3 h-3" />
