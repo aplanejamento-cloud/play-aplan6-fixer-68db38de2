@@ -402,9 +402,10 @@ const Premios = () => {
           <CityFilter filtroEstado={filtroEstado} filtroCidade={filtroCidade} setFiltroCidade={setFiltroCidade} />
         </div>
 
-        {([1, 2] as const).map((p) => (
-          <PrateleiraSection key={p} prateleira={p} userLikes={userLikes} onResgatar={handleResgatar} rescuingId={rescuingId} filtroEstado={filtroEstado} filtroCidade={filtroCidade} />
-        ))}
+        {isAdmin && (
+          <PrateleiraSection prateleira={1} userLikes={userLikes} onResgatar={handleResgatar} rescuingId={rescuingId} filtroEstado={filtroEstado} filtroCidade={filtroCidade} />
+        )}
+        <PrateleiraSection prateleira={2} userLikes={userLikes} onResgatar={handleResgatar} rescuingId={rescuingId} filtroEstado={filtroEstado} filtroCidade={filtroCidade} />
 
         {meusResgates.length > 0 && (
           <section className="space-y-3 px-4">
