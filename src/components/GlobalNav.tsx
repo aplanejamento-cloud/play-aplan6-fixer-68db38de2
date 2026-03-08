@@ -24,6 +24,27 @@ const GlobalNav = () => {
   const gameOn = gameState?.game_on ?? false;
   const navRef = useRef<HTMLDivElement>(null);
 
+  // Pending counts for admin badges
+  const { data: pendingResgates = 0 } = useQuery({
+    queryKey: ["pending-resgates-count"],
+    enabled: !!user && isAdmin,
+    refetchInterval: 15000,
+    queryFn: async () => {
+      const { count } = await supabase.from("resgates").select("*", { count: "exact", head: true }).eq("status", "pendente");
+      return count || 0;
+    },
+  });
+
+  const { data: pendingDoacoes = 0 } = useQuery({
+    queryKey: ["pending-doacoes-count"],
+    enabled: !!user && isAdmin,
+    refetchInterval: 15000,
+    queryFn: async () => {
+      const { count } = await supabase.from("doacoes_premios").select("*", { count: "exact", head: true }).eq("aprovado", false);
+      return count || 0;
+    },
+  });
+
   const allItems = [
     { path: "/", label: "Home", icon: Home, requiresGame: false, requiresAuth: false },
     { path: "/doacoes", label: "Doações", icon: Gift, requiresGame: false, requiresAuth: true },
