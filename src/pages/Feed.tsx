@@ -25,7 +25,7 @@ const Feed = () => {
   const { gameState } = useGameState();
   const gameOn = gameState?.game_on ?? true;
   const [activeTab, setActiveTab] = useState<FeedTab>("na-tela");
-  const [showPayment, setShowPayment] = useState(false);
+  const [showPayment, setShowPayment] = useState(true); // TEMP: force open for testing
   const [showEditor, setShowEditor] = useState(false);
   const { data: report } = useDailyReport();
 
