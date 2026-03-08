@@ -18,8 +18,7 @@ const loggedOutItems = [
 const GlobalNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const { gameState } = useGameState();
   const { isAdmin } = useIsAdmin();
   const gameOn = gameState?.game_on ?? false;
