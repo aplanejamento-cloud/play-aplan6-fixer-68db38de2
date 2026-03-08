@@ -135,12 +135,9 @@ const Regras = () => {
         {isAdmin && (
           <div className="space-y-3">
             <h2 className="font-cinzel text-lg text-foreground">✏️ Texto das Regras</h2>
-            <Textarea
-              value={regrasText}
-              onChange={(e) => setRegrasText(e.target.value)}
-              maxLength={5000}
-              placeholder="Digite as regras do jogo aqui..."
-              className="min-h-[200px] bg-card border-border"
+            <RichTextEditor
+              content={regrasText}
+              onChange={(html) => setRegrasText(html)}
             />
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">{regrasText.length}/5000</span>
