@@ -9,6 +9,8 @@ interface Profile {
   sex: string | null;
   whatsapp: string | null;
   show_whatsapp: boolean;
+  show_email_public: boolean;
+  email: string | null;
   avatar_url: string | null;
   bio: string | null;
   video_url: string | null;
