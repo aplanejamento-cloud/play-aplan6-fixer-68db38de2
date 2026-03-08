@@ -158,9 +158,10 @@ const Regras = () => {
 
         {/* Display regras text for all users */}
         {!isAdmin && regrasTextData?.media_url && (
-          <div className="bg-card border border-border rounded-xl p-4 whitespace-pre-wrap text-sm text-foreground">
-            {regrasTextData.media_url}
-          </div>
+          <div 
+            className="bg-card border border-border rounded-xl p-4 text-sm text-foreground prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{ __html: regrasTextData.media_url }}
+          />
         )}
 
         {isLoading ? (
