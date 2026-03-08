@@ -275,7 +275,7 @@ const DonationForm = () => {
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground italic">💡 Doe um prêmio → receba likes quando aprovado E quando entregue ao usuário! Retire no endereço do doador.</p>
+      <p className="text-xs text-muted-foreground italic">💡 Doe um prêmio → receba likes quando aprovado e quando entregue ao usuário! Retire no endereço do doador.</p>
 
       <Button
         className="w-full font-cinzel font-bold"
