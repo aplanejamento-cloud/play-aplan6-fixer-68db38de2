@@ -15,6 +15,7 @@ import { Upload, Loader2, Clock, CheckCircle2, Lock, Image as ImageIcon, MapPin,
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { sendWhatsAppDoador } from "@/services/WhatsAppService";
 
 // ─── Donor Ticket Verification with Likes Transfer ────────
 const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: string; doacaoUserId: string; likesRecebidos: number }) => {
