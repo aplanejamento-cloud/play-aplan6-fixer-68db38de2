@@ -21,6 +21,8 @@ interface Profile {
   is_blocked: boolean;
   blocked_until: string | null;
   birth_date: string | null;
+  multiplicador_ativo: number | null;
+  multiplicador_end: string | null;
   created_at: string;
   updated_at: string;
 }
