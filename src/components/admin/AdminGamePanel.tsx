@@ -137,22 +137,23 @@ const PremiosTab = () => {
       midia_url = await upload(selectedFile);
     }
     await adicionarPremio.mutateAsync({
-      tipo_prateleira: Number(prateleira) as 1 | 2,
+      tipo_prateleira: finalistOnly ? 1 : Number(prateleira) as 1 | 2,
       midia_url,
       titulo: titulo || null,
       descricao: descricao || null,
-      likes_custo: likesCusto,
-      estoque,
-      quantidade: estoque,
+      likes_custo: finalistOnly ? 0 : likesCusto,
+      estoque: finalistOnly ? 999 : estoque,
+      quantidade: finalistOnly ? 999 : estoque,
       estado: null,
       cidade: null,
       bairro: null,
       endereco: null,
       numero: null,
       complemento: null,
+      finalist_only: finalistOnly,
     });
     setTitulo(""); setDescricao(""); setLikesCusto(100); setEstoque(1);
-    setPreviewUrl(null); setSelectedFile(null);
+    setPreviewUrl(null); setSelectedFile(null); setFinalistOnly(false);
   };
 
   return (
