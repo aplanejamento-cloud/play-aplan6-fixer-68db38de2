@@ -1,15 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import AppHeader from "@/components/AppHeader";
 import InviteButton from "@/components/InviteButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useCreateCompra, useMinhasCompras } from "@/hooks/useComprasPix";
+import { useMinhasCompras } from "@/hooks/useComprasPix";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Heart, Copy, Check, Clock, CheckCircle, XCircle, MessageCircle, Zap, Crown, Sparkles } from "lucide-react";
+import { Heart, Copy, Check, Clock, CheckCircle, XCircle, Zap, Crown, Sparkles, Loader2, QrCode } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const PACOTES_TURBO = [
   { tipo: "turbo", likes: 0, valor: 19.9, label: "🔥 Turbo Likes x10", desc: "7 dias — cada like vale 10!", best: true, icon: Zap },
@@ -23,17 +23,17 @@ const PACOTES_LIKES = [
   { tipo: "likes", likes: 1000, valor: 70, label: "1.000 Likes", desc: "Pacote Premium" },
 ];
 
-const PIX_KEY = "playlike@pix.com";
-
 const ComprarLikes = () => {
   const [selectedTurbo, setSelectedTurbo] = useState<number | null>(null);
   const [selectedLikes, setSelectedLikes] = useState<number | null>(null);
+  const [pixData, setPixData] = useState<{ qr_code: string; qr_code_base64: string; payment_id: string } | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [polling, setPolling] = useState(false);
   const [copied, setCopied] = useState(false);
-  const createCompra = useCreateCompra();
   const { data: minhasCompras = [] } = useMinhasCompras();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  // Fetch user profile for turbo/premium status
   const { data: profile } = useQuery({
     queryKey: ["my-profile-turbo", user?.id],
     queryFn: async () => {
@@ -50,8 +50,8 @@ const ComprarLikes = () => {
   const turboActive = profile?.multiplicador_end && new Date(profile.multiplicador_end) > new Date() && (profile.multiplicador_ativo ?? 1) > 1;
   const premiumActive = profile?.premium_active && profile?.premium_end && new Date(profile.premium_end) > new Date();
 
-  const selected = selectedTurbo !== null ? { ...PACOTES_TURBO[selectedTurbo], source: "turbo" as const } 
-    : selectedLikes !== null ? { ...PACOTES_LIKES[selectedLikes], source: "likes" as const } 
+  const selected = selectedTurbo !== null ? { ...PACOTES_TURBO[selectedTurbo], source: "turbo" as const }
+    : selectedLikes !== null ? { ...PACOTES_LIKES[selectedLikes], source: "likes" as const }
     : null;
 
   const handleSelect = (type: "turbo" | "likes", index: number) => {
@@ -62,36 +62,64 @@ const ComprarLikes = () => {
       setSelectedLikes(index);
       setSelectedTurbo(null);
     }
+    setPixData(null);
+    setPolling(false);
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(PIX_KEY);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast.success("Chave PIX copiada!");
-  };
-
-  const handleComprar = async () => {
-    if (!selected) return;
+  // Generate PIX QR via edge function
+  const handleGerarPix = async () => {
+    if (!selected || !user) return;
+    setGenerating(true);
     try {
-      await createCompra.mutateAsync({
-        valor: selected.valor,
-        likes: selected.likes,
-        pixCopia: PIX_KEY,
-        tipo: selected.tipo,
+      const { data, error } = await supabase.functions.invoke("create-pix-payment", {
+        body: { tipo: selected.tipo, valor: selected.valor, likes: selected.likes },
       });
-      toast.success("Compra registrada! Aguarde aprovação do admin após enviar o comprovante.");
-      setSelectedTurbo(null);
-      setSelectedLikes(null);
-    } catch {
-      toast.error("Erro ao registrar compra");
+      if (error) throw error;
+      setPixData(data);
+      setPolling(true);
+      toast.success("QR Code PIX gerado! Escaneie para pagar.");
+    } catch (e: any) {
+      console.error("Erro ao gerar PIX:", e);
+      toast.error("Erro ao gerar PIX: " + (e.message || "tente novamente"));
+    } finally {
+      setGenerating(false);
     }
   };
 
-  const handleWhatsApp = () => {
-    if (!selected) return;
-    const text = `Olá! Fiz um PIX de R$${selected.valor.toFixed(2)} para ${selected.label} no PlayLike. Segue comprovante.`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+  // Poll for payment approval
+  const checkApproval = useCallback(async () => {
+    if (!user || !polling) return;
+    const { data } = await supabase
+      .from("compras_pix")
+      .select("status")
+      .eq("usuario_id", user.id)
+      .eq("status", "aprovado")
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (data && data.length > 0) {
+      setPolling(false);
+      setPixData(null);
+      setSelectedTurbo(null);
+      setSelectedLikes(null);
+      queryClient.invalidateQueries({ queryKey: ["compras-pix"] });
+      queryClient.invalidateQueries({ queryKey: ["my-profile-turbo"] });
+      toast.success("✅ PIX aprovado automaticamente! Créditos adicionados!");
+    }
+  }, [user, polling, queryClient]);
+
+  useEffect(() => {
+    if (!polling) return;
+    const interval = setInterval(checkApproval, 5000);
+    return () => clearInterval(interval);
+  }, [polling, checkApproval]);
+
+  const handleCopyQR = () => {
+    if (!pixData?.qr_code) return;
+    navigator.clipboard.writeText(pixData.qr_code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast.success("Código PIX copiado!");
   };
 
   const statusIcon = (s: string) => {
@@ -187,28 +215,79 @@ const ComprarLikes = () => {
           ))}
         </div>
 
-        {/* PIX Payment */}
-        {selected && (
+        {/* PIX Payment - QR Code */}
+        {selected && !pixData && (
           <Card className="border-primary/50 bg-card/80">
             <CardContent className="py-5 space-y-4">
-              <h3 className="font-cinzel text-primary text-center">Pagar via PIX</h3>
-              <div className="flex items-center gap-2 bg-muted rounded-lg p-3">
-                <code className="flex-1 text-sm text-foreground break-all">{PIX_KEY}</code>
-                <Button size="sm" variant="outline" onClick={handleCopy}>
-                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                </Button>
-              </div>
+              <h3 className="font-cinzel text-primary text-center">Pagar via PIX Automático</h3>
               <p className="text-xs text-muted-foreground text-center">
                 Valor: <strong>R${selected.valor.toFixed(2).replace(".", ",")}</strong> → <strong>{selected.label}</strong>
               </p>
-              <div className="flex gap-2">
-                <Button onClick={handleComprar} disabled={createCompra.isPending} className="flex-1">
-                  {createCompra.isPending ? "Registrando..." : "✅ Já paguei!"}
-                </Button>
-                <Button variant="outline" onClick={handleWhatsApp} className="flex-shrink-0">
-                  <MessageCircle className="w-4 h-4" />
+              <p className="text-xs text-center text-green-500 font-medium">
+                ⚡ Pagamento detectado automaticamente — sem precisar enviar comprovante!
+              </p>
+              <Button onClick={handleGerarPix} disabled={generating} className="w-full">
+                {generating ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando QR Code...</>
+                ) : (
+                  <><QrCode className="w-4 h-4 mr-2" /> Gerar QR Code PIX</>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* QR Code Display */}
+        {pixData && (
+          <Card className="border-green-500/50 bg-card/80">
+            <CardContent className="py-5 space-y-4">
+              <h3 className="font-cinzel text-green-500 text-center">📱 Escaneie o QR Code</h3>
+
+              {pixData.qr_code_base64 ? (
+                <div className="flex justify-center">
+                  <img
+                    src={`data:image/png;base64,${pixData.qr_code_base64}`}
+                    alt="QR Code PIX"
+                    className="w-48 h-48 rounded-lg border border-border"
+                  />
+                </div>
+              ) : (
+                <div className="flex justify-center">
+                  <div className="w-48 h-48 rounded-lg border border-border bg-muted flex items-center justify-center">
+                    <QrCode className="w-16 h-16 text-muted-foreground" />
+                  </div>
+                </div>
+              )}
+
+              {/* Copy PIX code */}
+              <div className="flex items-center gap-2 bg-muted rounded-lg p-3">
+                <code className="flex-1 text-xs text-foreground break-all line-clamp-2">
+                  {pixData.qr_code}
+                </code>
+                <Button size="sm" variant="outline" onClick={handleCopyQR}>
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </Button>
               </div>
+
+              {/* Polling indicator */}
+              {polling && (
+                <div className="flex items-center justify-center gap-2 text-yellow-500">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm font-medium">Detectando pagamento...</span>
+                </div>
+              )}
+
+              <p className="text-xs text-muted-foreground text-center">
+                Valor: <strong>R${selected?.valor.toFixed(2).replace(".", ",")}</strong> • {selected?.label}
+              </p>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => { setPixData(null); setPolling(false); }}
+              >
+                Cancelar
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -233,7 +312,7 @@ const ComprarLikes = () => {
                     c.status === "rejeitado" && "bg-destructive/20 text-destructive",
                     c.status === "pendente" && "bg-yellow-500/20 text-yellow-500"
                   )}>
-                    {c.status}
+                    {c.status === "aprovado" ? "✅ Auto" : c.status}
                   </span>
                 </CardContent>
               </Card>

@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.reset-test-passwords]
 verify_jwt = false
+
+[functions.create-pix-payment]
+verify_jwt = false
+
+[functions.webhook-mercadopago]
+verify_jwt = false
