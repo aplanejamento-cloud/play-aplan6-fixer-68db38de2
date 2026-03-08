@@ -119,6 +119,7 @@ const AppContent = () => {
         <Route path="/admin/pix-logs" element={<AuthProtectedRoute><AdminPixLogs /></AuthProtectedRoute>} />
         <Route path="/admin/premium-users" element={<AuthProtectedRoute><AdminPremiumUsers /></AuthProtectedRoute>} />
         <Route path="/admin/cultura-stats" element={<AuthProtectedRoute><AdminCulturaStats /></AuthProtectedRoute>} />
+        <Route path="/admin/resgates" element={<AuthProtectedRoute><AdminResgates /></AuthProtectedRoute>} />
         <Route path="/sos-ajuda" element={<AuthProtectedRoute><SosAjuda /></AuthProtectedRoute>} />
 
         {/* Game-state protected */}
