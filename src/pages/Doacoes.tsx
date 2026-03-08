@@ -316,7 +316,7 @@ const Doacoes = () => {
         <div>
           <h1 className="font-cinzel font-bold text-2xl text-foreground">🎁 Doe um Prêmio</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Doe um prêmio → receba likes quando aprovado E quando entregue ao usuário! Retire no endereço do doador.
+            Doe um prêmio → receba likes quando aprovado e quando entregue ao usuário! Retire no endereço do doador.
           </p>
         </div>
 
