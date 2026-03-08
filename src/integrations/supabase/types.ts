@@ -847,6 +847,7 @@ export type Database = {
           birth_date: string | null
           blocked_until: string | null
           created_at: string | null
+          eliminated_at: string | null
           id: string
           is_blocked: boolean | null
           is_bot: boolean | null
@@ -874,6 +875,7 @@ export type Database = {
           birth_date?: string | null
           blocked_until?: string | null
           created_at?: string | null
+          eliminated_at?: string | null
           id?: string
           is_blocked?: boolean | null
           is_bot?: boolean | null
@@ -901,6 +903,7 @@ export type Database = {
           birth_date?: string | null
           blocked_until?: string | null
           created_at?: string | null
+          eliminated_at?: string | null
           id?: string
           is_blocked?: boolean | null
           is_bot?: boolean | null
