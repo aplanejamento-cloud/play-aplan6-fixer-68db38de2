@@ -8,8 +8,6 @@ import { Button } from "@/components/ui/button";
 import RichTextEditor from "@/components/feed/RichTextEditor";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Upload, Trash2, Loader2, ChevronLeft, ChevronRight, X, Play, Save } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Upload, Trash2, Loader2, ChevronLeft, ChevronRight, X, Play, Save } from "lucide-react";
 import { toast } from "sonner";
 
 interface RegrasItem {
