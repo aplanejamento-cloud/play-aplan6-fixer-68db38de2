@@ -116,6 +116,13 @@ const SetupTest = () => {
         </button>
       </div>
 
+      <h2 className="text-lg font-bold mb-2">👑 Admin Login → Feed</h2>
+      <div className="flex gap-4 flex-wrap mb-4">
+        <button onClick={() => handleLoginAdmin("aplanejamento@gmail.com")} className="px-4 py-2 bg-yellow-600 text-white rounded font-bold">
+          Admin (aplanejamento) → Feed
+        </button>
+      </div>
+
       <h2 className="text-lg font-bold mb-2">⚔️ Login Rápido → Duelos</h2>
       <div className="flex gap-4 flex-wrap mb-4">
         <button onClick={() => handleLoginDuels("teste1@playlike.com")} className="px-4 py-2 bg-destructive text-destructive-foreground rounded font-bold">
