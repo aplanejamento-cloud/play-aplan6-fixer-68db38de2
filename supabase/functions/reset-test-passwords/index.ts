@@ -36,10 +36,13 @@ Deno.serve(async (req) => {
   }
   const users = allUsers;
 
+  // Debug: list all user emails
+  const allEmails = users.map((u: any) => u.email);
+  
   for (const email of testEmails) {
     const user = users?.find((u: any) => u.email === email);
     if (!user) {
-      results.push(`❌ ${email}: usuário não encontrado`);
+      results.push(`❌ ${email}: usuário não encontrado (total users: ${users.length})`);
       continue;
     }
     const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, { password: newPassword });
@@ -50,7 +53,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  return new Response(JSON.stringify({ results }), {
+  return new Response(JSON.stringify({ results, allEmails }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });
