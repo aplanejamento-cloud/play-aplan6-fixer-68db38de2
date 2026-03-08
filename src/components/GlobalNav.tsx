@@ -47,6 +47,8 @@ const GlobalNav = () => {
     { path: "/ebooks", label: "Ebooks", icon: FileText, requiresGame: false, requiresAuth: true },
     { path: "/eliminados", label: "Eliminados", icon: Skull, requiresGame: false, requiresAuth: false },
     { path: "/stats", label: "Stats", icon: BarChart3, requiresGame: false, requiresAuth: true, requiresAdmin: true },
+    { path: "/admin/resgates", label: "Resgates", icon: Ticket, requiresGame: false, requiresAuth: true, requiresAdmin: true },
+    { path: "/analytics", label: "Analytics", icon: PieChart, requiresGame: false, requiresAuth: true, requiresAdmin: true },
     { path: "/bots-control", label: "Bots", icon: Bot, requiresGame: false, requiresAuth: true, requiresAdmin: true },
   ];
 
