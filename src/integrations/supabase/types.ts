@@ -710,9 +710,11 @@ export type Database = {
           id: string
           image_url: string | null
           likes_count: number | null
+          multiplicador: number | null
           music_url: string | null
           raio: boolean | null
           remix_count: number | null
+          tema_id: string | null
           tipo: string | null
           user_id: string
           video_url: string | null
@@ -730,9 +732,11 @@ export type Database = {
           id?: string
           image_url?: string | null
           likes_count?: number | null
+          multiplicador?: number | null
           music_url?: string | null
           raio?: boolean | null
           remix_count?: number | null
+          tema_id?: string | null
           tipo?: string | null
           user_id: string
           video_url?: string | null
@@ -750,14 +754,23 @@ export type Database = {
           id?: string
           image_url?: string | null
           likes_count?: number | null
+          multiplicador?: number | null
           music_url?: string | null
           raio?: boolean | null
           remix_count?: number | null
+          tema_id?: string | null
           tipo?: string | null
           user_id?: string
           video_url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "posts_tema_id_fkey"
+            columns: ["tema_id"]
+            isOneToOne: false
+            referencedRelation: "temas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "posts_user_id_fkey"
             columns: ["user_id"]
