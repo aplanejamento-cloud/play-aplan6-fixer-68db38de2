@@ -98,7 +98,7 @@ const SetupTest = () => {
   const handleLoginDuels = async (email: string) => {
     setLoginResult("Fazendo login " + email + " → /duels...");
     await supabase.auth.signOut();
-    const { error } = await supabase.auth.signInWithPassword({ email, password: "123456" });
+    const { error } = await supabase.auth.signInWithPassword({ email, password: "teste123" });
     if (error) {
       setLoginResult("❌ " + error.message);
     } else {
