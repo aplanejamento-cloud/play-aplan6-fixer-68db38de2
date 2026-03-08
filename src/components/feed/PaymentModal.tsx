@@ -46,12 +46,29 @@ const PaymentModal = ({ open, onOpenChange }: PaymentModalProps) => {
     const interval = setInterval(async () => {
       const { data } = await supabase
         .from("compras_pix")
-        .select("status")
+        .select("status, likes_adquiridos")
         .eq("id", compraId)
         .single();
       if (data?.status === "aprovado") {
         clearInterval(interval);
         setPolling(false);
+
+        // Auto-credit likes + activate premium
+        if (user) {
+          const likesToAdd = data.likes_adquiridos || 1000;
+          const { data: currentProfile } = await supabase
+            .from("profiles")
+            .select("total_likes")
+            .eq("user_id", user.id)
+            .single();
+          const newLikes = (currentProfile?.total_likes || 0) + likesToAdd;
+          await supabase.from("profiles").update({
+            total_likes: newLikes,
+            premium_active: true,
+            premium_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          }).eq("user_id", user.id);
+        }
+
         toast.success("✅ PIX detectado! +1000 likes + Cadastro ativo!");
         setPixData(null);
         onOpenChange(false);
