@@ -82,30 +82,26 @@ const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: 
 
       // Transfer likes: user -> doador
       await supabase.from("profiles")
-        .update({ total_likes: (doador as any).total_likes + likesGastos })
+        .update({ total_likes: doador!.total_likes! + likesGastos })
         .eq("user_id", doacaoUserId);
 
       await supabase.from("profiles")
-        .update({ total_likes: (claimedUser as any).total_likes - likesGastos })
+        .update({ total_likes: claimedUser.total_likes! - likesGastos })
         .eq("user_id", claimedUserId);
 
       // Mark resgate as transferred
       await supabase.from("resgates")
-        .update({ likes_transferidos: true, status: "retirado" } as any)
+        .update({ likes_transferidos: true, status: "Aprovado e entregue" })
         .eq("id", resgate.id);
 
       // Decrement stock now that doador verified
-      const premioId = (resgate as any).premio_id;
+      const premioId = resgate.premio_id;
       if (premioId) {
         const { data: premio } = await supabase.from("premios").select("estoque").eq("id", premioId).single();
         if (premio) {
-          await supabase.from("premios").update({ estoque: Math.max(0, (premio as any).estoque - 1) }).eq("id", premioId);
+          await supabase.from("premios").update({ estoque: Math.max(0, premio.estoque! - 1) }).eq("id", premioId);
         }
       }
-
-      await supabase.from("doacoes_premios")
-        .update({ verified_by_doador: true } as any)
-        .eq("id", doacaoId);
 
       qc.invalidateQueries({ queryKey: ["minhas_doacoes"] });
       qc.invalidateQueries({ queryKey: ["premios"] });
