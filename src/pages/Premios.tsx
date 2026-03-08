@@ -5,11 +5,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useRef, useMemo } from "react";
-import { Gift, MapPin, Loader2, Lock, AlertTriangle, Ticket, Copy, CheckCircle2, Clock, XCircle, Volume2, VolumeX, Play, Pause } from "lucide-react";
+import { Gift, MapPin, Loader2, Lock, AlertTriangle, Ticket, Copy, CheckCircle2, Clock, XCircle, Volume2, VolumeX, Play, Pause, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import AppHeader from "@/components/AppHeader";
 import InviteButton from "@/components/InviteButton";
 import { cn } from "@/lib/utils";
@@ -280,6 +282,11 @@ const Premios = () => {
   const [rescuingId, setRescuingId] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState("all");
   const [filtroCidade, setFiltroCidade] = useState("all");
+  const [senhaModal, setSenhaModal] = useState<{ open: boolean; premio: Premio | null }>({ open: false, premio: null });
+  const [senha, setSenha] = useState("");
+  const [senhaError, setSenhaError] = useState("");
+  const [senhaLoading, setSenhaLoading] = useState(false);
+  const [showSenha, setShowSenha] = useState(false);
   const qc = useQueryClient();
 
   const { data: profile } = useQuery({
@@ -309,15 +316,11 @@ const Premios = () => {
     try {
       const resgate = meusResgates.find((r: any) => r.id === resgateId);
       if (!resgate) return;
-      // Delete the resgate completely (it will disappear from UI)
       await supabase.from("resgates").delete().eq("id", resgateId);
-      // Refund likes to user
       const { data: prof } = await supabase.from("profiles").select("total_likes").eq("user_id", user!.id).single();
       if (prof) {
         await supabase.from("profiles").update({ total_likes: prof.total_likes + resgate.likes_gastos }).eq("user_id", user!.id);
       }
-      // Note: estoque is NOT incremented here because it was never decremented on selection
-      // (estoque only decrements when doador verifies senha)
       qc.invalidateQueries({ queryKey: ["meus_resgates"] });
       qc.invalidateQueries({ queryKey: ["profile_likes"] });
       qc.invalidateQueries({ queryKey: ["premios"] });
@@ -329,18 +332,48 @@ const Premios = () => {
 
   const userLikes = profile?.total_likes ?? 0;
 
-  const handleResgatar = async (premio: Premio) => {
+  // Open modal instead of directly exchanging
+  const handleResgatar = (premio: Premio) => {
     if (!user) return;
     if (userLikes < premio.likes_custo) { toast.error("Não tem likes suficientes!"); return; }
     if (userLikes - premio.likes_custo === 0) { toast.error("⚠️ Ganhe mais likes antes! Ficar com 0 likes te elimina do jogo por 3 dias."); return; }
-    const ticketCode = generateTicketCode();
-    const enderecoCompleto = [premio.endereco, premio.numero, premio.bairro, premio.cidade, premio.estado].filter(Boolean).join(", ");
-    setRescuingId(premio.id);
+    setSenha("");
+    setSenhaError("");
+    setShowSenha(false);
+    setSenhaModal({ open: true, premio });
+  };
+
+  // Confirm exchange with password verification
+  const handleConfirmTroca = async () => {
+    if (!user || !senhaModal.premio) return;
+    if (!senha.trim()) { setSenhaError("Digite sua senha"); return; }
+    setSenhaLoading(true);
+    setSenhaError("");
     try {
+      // Verify password by trying to sign in
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: user.email!,
+        password: senha,
+      });
+      if (authError) {
+        setSenhaError("Senha incorreta");
+        setSenhaLoading(false);
+        return;
+      }
+      // Password correct — proceed with exchange
+      const premio = senhaModal.premio;
+      const ticketCode = generateTicketCode();
+      const enderecoCompleto = [premio.endereco, premio.numero, premio.bairro, premio.cidade, premio.estado].filter(Boolean).join(", ");
+      setRescuingId(premio.id);
+      setSenhaModal({ open: false, premio: null });
       await resgatar.mutateAsync({ premioId: premio.id, userId: user.id, likesCusto: premio.likes_custo, codigoTicket: ticketCode, enderecoCompleto: enderecoCompleto || null });
       toast.success(`🎫 Seu Ticket Retirada: ${ticketCode}`, { duration: 10000 });
-    } catch { /* handled in hook */ }
-    setRescuingId(null);
+      setRescuingId(null);
+    } catch {
+      toast.error("Erro ao trocar prêmio");
+      setRescuingId(null);
+    }
+    setSenhaLoading(false);
   };
 
   if (!user) {
@@ -419,6 +452,49 @@ const Premios = () => {
           </section>
         )}
       </div>
+
+      {/* Password confirmation modal */}
+      <Dialog open={senhaModal.open} onOpenChange={(open) => { if (!open) setSenhaModal({ open: false, premio: null }); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-cinzel text-foreground">Confirmar Troca</DialogTitle>
+            <DialogDescription>
+              Trocar <span className="font-bold text-primary">{senhaModal.premio?.likes_custo} likes</span> por{" "}
+              <span className="font-bold">{senhaModal.premio?.titulo || "prêmio"}</span>?
+              Digite sua senha para confirmar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="relative">
+              <Input
+                type={showSenha ? "text" : "password"}
+                placeholder="Sua senha"
+                value={senha}
+                onChange={(e) => { setSenha(e.target.value); setSenhaError(""); }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleConfirmTroca(); }}
+                className={senhaError ? "border-destructive" : ""}
+              />
+              <button
+                type="button"
+                onClick={() => setShowSenha(!showSenha)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            {senhaError && <p className="text-sm text-destructive font-medium">{senhaError}</p>}
+          </div>
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setSenhaModal({ open: false, premio: null })} disabled={senhaLoading}>
+              CANCELAR
+            </Button>
+            <Button onClick={handleConfirmTroca} disabled={senhaLoading}>
+              {senhaLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+              CONFIRMAR
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
