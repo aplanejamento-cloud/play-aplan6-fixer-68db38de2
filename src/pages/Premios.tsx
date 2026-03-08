@@ -274,6 +274,7 @@ const TicketCard = ({ resgate, premioData, onCancel }: { resgate: any; premioDat
 const Premios = () => {
   const { user } = useAuth();
   const { gameState } = useGameState();
+  const { isAdmin } = useIsAdmin();
   const resgatar = useResgatarPremio();
   const [rescuingId, setRescuingId] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState("all");
