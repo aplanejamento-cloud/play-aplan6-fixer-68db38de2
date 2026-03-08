@@ -15,6 +15,7 @@ import { Upload, Loader2, Clock, CheckCircle2, Lock, Image as ImageIcon, MapPin,
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { sendWhatsAppDoador } from "@/services/WhatsAppService";
 
 // ─── Donor Ticket Verification with Likes Transfer ────────
 const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: string; doacaoUserId: string; likesRecebidos: number }) => {
@@ -115,10 +116,23 @@ const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: 
         mensagem: `🎉 Você recebeu ${likesGastos} likes da sua ${premioTitulo}!`,
       });
 
+      // WhatsApp notification to donor (best-effort)
+      const { data: doadorProfile } = await supabase
+        .from("profiles")
+        .select("whatsapp")
+        .eq("user_id", doacaoUserId)
+        .single();
+
+      const whatsappSent = await sendWhatsAppDoador(
+        doadorProfile?.whatsapp || null,
+        likesGastos,
+        premioTitulo
+      );
+
       qc.invalidateQueries({ queryKey: ["minhas_doacoes"] });
       qc.invalidateQueries({ queryKey: ["premios"] });
       setResult({ success: true, message: `✅ Likes transferidos! +${likesGastos} likes para você.` });
-      toast.success(`✅ Likes transferidos! Estoque -1`);
+      toast.success(`🎉 +${likesGastos} likes${whatsappSent ? " + WhatsApp enviado" : ""}! Estoque -1`);
     } catch (e: any) {
       setResult({ success: false, message: e.message || "Erro ao verificar" });
       toast.error("Erro ao verificar ticket");
