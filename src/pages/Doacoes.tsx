@@ -354,7 +354,7 @@ const Doacoes = () => {
                     </div>
                     {isApproved ? (
                       <Badge className="flex items-center gap-1 bg-primary/20 text-primary border-primary/30">
-                        <CheckCircle2 className="w-3 h-3" /> Aprovado e entregue
+                        <CheckCircle2 className="w-3 h-3" /> Aprovado
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="flex items-center gap-1 text-muted-foreground">
