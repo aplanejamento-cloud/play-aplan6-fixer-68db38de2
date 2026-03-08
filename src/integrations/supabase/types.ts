@@ -656,6 +656,24 @@ export type Database = {
         }
         Relationships: []
       }
+      patrocinio: {
+        Row: {
+          created_at: string | null
+          id: string
+          whatsapp: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          whatsapp?: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
       post_images: {
         Row: {
           created_at: string | null

@@ -5,7 +5,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import AppHeader from "@/components/AppHeader";
 import InviteButton from "@/components/InviteButton";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor from "@/components/feed/RichTextEditor";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Upload, Trash2, Loader2, ChevronLeft, ChevronRight, X, Play, Save } from "lucide-react";
 import { toast } from "sonner";
@@ -133,12 +133,9 @@ const Regras = () => {
         {isAdmin && (
           <div className="space-y-3">
             <h2 className="font-cinzel text-lg text-foreground">✏️ Texto das Regras</h2>
-            <Textarea
-              value={regrasText}
-              onChange={(e) => setRegrasText(e.target.value)}
-              maxLength={5000}
-              placeholder="Digite as regras do jogo aqui..."
-              className="min-h-[200px] bg-card border-border"
+            <RichTextEditor
+              content={regrasText}
+              onChange={(html) => setRegrasText(html)}
             />
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">{regrasText.length}/5000</span>
@@ -159,9 +156,10 @@ const Regras = () => {
 
         {/* Display regras text for all users */}
         {!isAdmin && regrasTextData?.media_url && (
-          <div className="bg-card border border-border rounded-xl p-4 whitespace-pre-wrap text-sm text-foreground">
-            {regrasTextData.media_url}
-          </div>
+          <div 
+            className="bg-card border border-border rounded-xl p-4 text-sm text-foreground prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{ __html: regrasTextData.media_url }}
+          />
         )}
 
         {isLoading ? (

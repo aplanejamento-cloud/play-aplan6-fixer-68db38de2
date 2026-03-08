@@ -9,7 +9,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useRemixCount } from "@/hooks/useRemix";
 import { useDuels } from "@/hooks/useDuels";
 import { Button } from "@/components/ui/button";
-import { Heart, Flame, Bomb, UserPlus, UserMinus, Trash2, Crown, User, Music, Gift, Repeat2, Sparkles, Swords, Zap, Share2 } from "lucide-react";
+import { Heart, Flame, Bomb, UserPlus, UserMinus, Trash2, Crown, User, Music, Gift, Repeat2, Sparkles, Swords, Zap, Share2, Download } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -118,6 +118,29 @@ const PostCard = ({ post }: PostCardProps) => {
       toast.success("Link copiado! 📋");
     }
   };
+
+  const handleDownloadMedia = async () => {
+    const mediaUrl = post.image_url || post.video_url || post.music_url;
+    if (!mediaUrl) return;
+    try {
+      const response = await fetch(mediaUrl, { mode: "cors" });
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      const ext = mediaUrl.split('.').pop()?.split('?')[0] || "jpg";
+      a.download = `playlike-${post.id.slice(0, 8)}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+      toast.success("Download iniciado! 📥");
+    } catch {
+      window.open(mediaUrl, "_blank");
+    }
+  };
+
+  const hasMedia = !!(post.image_url || post.video_url || post.music_url);
 
   return (
     <article className="bg-card border border-border rounded-xl overflow-hidden">
@@ -246,6 +269,16 @@ const PostCard = ({ post }: PostCardProps) => {
           <InteractionButton type="like" icon={Heart} label="Curtir" activeClass="bg-primary/20 text-primary" value="+1" />
           <InteractionButton type="love" icon={Flame} label="Lacrou" activeClass="bg-orange-500/20 text-orange-500" value="+10" />
           <InteractionButton type="bomb" icon={Bomb} label="Bomba" activeClass="bg-destructive/20 text-destructive" value="-10" />
+          
+          {hasMedia && (
+            <button
+              onClick={handleDownloadMedia}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-muted/50 text-muted-foreground hover:bg-muted transition-all"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Baixar</span>
+            </button>
+          )}
           
           {/* Challenge button - only for other jogadores */}
           {user && !isOwnPost && isTargetJogador && profile?.user_type === "jogador" && (
