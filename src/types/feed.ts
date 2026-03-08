@@ -19,8 +19,8 @@ export interface Post {
   expires_at: string;
   author?: PostAuthor;
   additional_images?: string[];
-  multiplicador?: number;
-  tema_id?: string;
+  multiplicador?: number | null;
+  tema_id?: string | null;
 }
 
 export interface PostInteraction {
