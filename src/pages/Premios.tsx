@@ -140,7 +140,7 @@ const PrizeCard = ({ premio, userLikes, onResgatar, isRescuing }: {
       </div>
       <div className="flex-1 p-4 flex flex-col gap-2">
         {isFinalistOnly && (
-          <Badge className="bg-accent text-accent-foreground text-xs mb-1">🏆 Somente Para Finalista</Badge>
+          <Badge className="bg-accent text-accent-foreground text-xs mb-1">🏆 Somente Para Finalista — ENTREGA MANUAL</Badge>
         )}
         {premio.titulo && <h3 className="font-montserrat font-bold text-foreground text-sm line-clamp-2">{premio.titulo}</h3>}
         {premio.descricao && <p className="text-xs text-muted-foreground line-clamp-2">{premio.descricao}</p>}
