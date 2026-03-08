@@ -11,10 +11,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { Loader2, XCircle, BarChart3, Ticket, Search } from "lucide-react";
+import { Loader2, XCircle, BarChart3, Ticket, Search, Download } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+const exportCSV = (data: any[]) => {
+  const headers = ["Usuário", "Prêmio", "Ticket", "Likes", "Status", "Data"];
+  const rows = data.map((r: any) => [
+    r.usuario_nome || "",
+    r.premios?.titulo || "",
+    r.codigo_ticket || "",
+    r.likes_gastos || 0,
+    r.likes_transferidos ? "Retirada confirmada" : r.status || "",
+    r.created_at ? format(new Date(r.created_at), "dd/MM/yyyy HH:mm") : "",
+  ]);
+  const csv = [headers, ...rows].map((row) => row.map((c: any) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const BOM = "\uFEFF";
+  const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `resgates_${format(new Date(), "yyyy-MM-dd")}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.success("CSV exportado!");
+};
 
 const AdminResgates = () => {
   const { user } = useAuth();
