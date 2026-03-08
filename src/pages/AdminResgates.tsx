@@ -178,6 +178,9 @@ const AdminResgates = () => {
               <SelectItem value="cancelado">Cancelado</SelectItem>
             </SelectContent>
           </Select>
+          <Button variant="outline" size="sm" onClick={() => exportCSV(filtered)} disabled={filtered.length === 0}>
+            <Download className="w-4 h-4 mr-1" /> Exportar CSV
+          </Button>
         </div>
 
         {/* Table */}

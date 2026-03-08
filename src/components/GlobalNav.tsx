@@ -93,13 +93,16 @@ const GlobalNav = () => {
     <nav ref={navRef} className="flex items-center gap-1 overflow-x-auto scrollbar-thin pb-0.5" style={{ scrollbarWidth: 'thin' }}>
       {visibleItems.map((item) => {
         const isActive = location.pathname === item.path;
+        const badgeCount =
+          item.path === "/admin/resgates" ? pendingResgates :
+          item.path === "/doacoes" && isAdmin ? pendingDoacoes : 0;
         return (
           <button
             key={item.path}
             data-active={isActive}
             onClick={() => navigate(item.path)}
             className={cn(
-              "flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors min-h-[56px]",
+              "relative flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors min-h-[56px]",
               isActive
                 ? "bg-primary/20 text-primary"
                 : "text-muted-foreground hover:text-primary hover:bg-primary/10"
@@ -107,6 +110,11 @@ const GlobalNav = () => {
           >
             <item.icon className="w-4 h-4" />
             <span>{item.label}</span>
+            {badgeCount > 0 && (
+              <Badge className="bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
+                {badgeCount}
+              </Badge>
+            )}
           </button>
         );
       })}
