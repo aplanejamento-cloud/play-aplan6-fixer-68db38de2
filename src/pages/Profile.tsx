@@ -498,7 +498,7 @@ const Profile = () => {
               <video src={viewVideos[0].media_url} controls className="w-full rounded-lg max-h-80" />
             </CardContent>
           </Card>
-        )
+        )}
 
         {/* Video - only own profile */}
         {isOwnProfile && (
