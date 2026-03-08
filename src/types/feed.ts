@@ -5,6 +5,7 @@ export interface PostAuthor {
   name: string;
   avatar_url: string | null;
   user_type: "jogador" | "juiz";
+  eliminated_at?: string | null;
 }
 
 export interface Post {

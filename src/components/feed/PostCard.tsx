@@ -115,17 +115,19 @@ const PostCard = ({ post }: PostCardProps) => {
             className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
             onClick={() => navigate(`/profile/${post.user_id}`)}
           >
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+            <div className={cn("w-10 h-10 rounded-full flex items-center justify-center overflow-hidden", post.author?.eliminated_at ? "bg-muted grayscale" : "bg-primary/20")}>
               {post.author?.avatar_url ? (
-                <img src={post.author.avatar_url} alt={post.author.name} className="w-full h-full object-cover" />
+                <img src={post.author.avatar_url} alt={post.author.name} className={cn("w-full h-full object-cover", post.author?.eliminated_at && "grayscale opacity-50")} />
               ) : (
                 <span className="text-primary font-bold text-sm">{post.author?.name?.charAt(0).toUpperCase()}</span>
               )}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-foreground">{post.author?.name || "Anônimo"}</span>
-                {post.author?.user_type === "jogador" ? <Crown className="w-3.5 h-3.5 text-primary" /> : <User className="w-3.5 h-3.5 text-accent" />}
+                <span className={cn("font-semibold", post.author?.eliminated_at ? "text-muted-foreground line-through" : "text-foreground")}>{post.author?.name || "Anônimo"}</span>
+                {post.author?.eliminated_at ? (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-destructive/20 text-destructive font-bold">💀 ELIMINADO</span>
+                ) : post.author?.user_type === "jogador" ? <Crown className="w-3.5 h-3.5 text-primary" /> : <User className="w-3.5 h-3.5 text-accent" />}
                 {isAdmin && (post.author as any)?.is_bot && <span className="text-[9px] px-1 py-0.5 rounded bg-accent/20 text-accent">🤖</span>}
               </div>
               <time className="text-xs text-muted-foreground">

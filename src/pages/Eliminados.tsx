@@ -18,17 +18,13 @@ const Eliminados = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("user_id, name, avatar_url, total_likes, user_type")
-        .lte("total_likes", 0)
+        .select("user_id, name, avatar_url, total_likes, user_type, eliminated_at")
+        .not("eliminated_at", "is", null)
         .eq("user_type", "jogador")
         .eq("is_bot", false)
         .order("name", { ascending: true });
       if (error) throw error;
-      return (data || []).map((p: any) => ({
-        ...p,
-        eliminated_at: new Date(), // approximate
-        return_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-      }));
+      return data || [];
     },
     refetchInterval: 30000,
   });
@@ -36,6 +32,12 @@ const Eliminados = () => {
   const filtered = search.trim()
     ? eliminados.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
     : eliminados;
+
+  const getDaysRemaining = (eliminatedAt: string) => {
+    const returnDate = new Date(eliminatedAt);
+    returnDate.setDate(returnDate.getDate() + 3);
+    return Math.max(0, Math.ceil((returnDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -47,8 +49,8 @@ const Eliminados = () => {
             <Skull className="w-7 h-7" /> Eliminados
           </h1>
           <p className="text-sm text-muted-foreground">
-            Jogadores com 0 likes ou menos. Aguardam 3 dias para retornar ao jogo.
-            <br />Juízes não são eliminados.
+            Jogadores com 0 likes ou menos são eliminados automaticamente.
+            <br />Aguardam 3 dias para retornar. Juízes não são eliminados.
           </p>
         </div>
 
@@ -79,20 +81,22 @@ const Eliminados = () => {
                 onClick={() => navigate(`/profile/${p.user_id}`)}
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:border-destructive/50 transition-colors text-left"
               >
-                <Avatar className="w-12 h-12 border-2 border-destructive/30">
+                <Avatar className="w-12 h-12 border-2 border-destructive/30 grayscale opacity-60">
                   <AvatarImage src={p.avatar_url || ""} />
                   <AvatarFallback className="bg-secondary text-foreground font-cinzel">
                     {p.name?.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-foreground truncate">{p.name}</p>
-                  <p className="text-xs text-destructive font-medium">💀 Eliminado · {p.total_likes} likes</p>
-                  <p className="text-xs text-muted-foreground">
-                    Retorno em {Math.max(0, Math.ceil((p.return_date.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} dias
-                  </p>
+                  <p className="font-semibold text-muted-foreground line-through truncate">{p.name}</p>
+                  <p className="text-xs text-destructive font-bold">💀 ELIMINADO · {p.total_likes} likes</p>
+                  {p.eliminated_at && (
+                    <p className="text-xs text-muted-foreground">
+                      Retorno em {getDaysRemaining(p.eliminated_at)} dias
+                    </p>
+                  )}
                 </div>
-                <span className="text-xs text-muted-foreground capitalize">{p.user_type}</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-destructive/20 text-destructive font-bold">💀</span>
               </button>
             ))}
           </div>
