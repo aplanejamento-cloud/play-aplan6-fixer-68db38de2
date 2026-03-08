@@ -122,6 +122,7 @@ const PremiosTab = () => {
   const [prateleira, setPrateleira] = useState<"1" | "2">("1");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [finalistOnly, setFinalistOnly] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
