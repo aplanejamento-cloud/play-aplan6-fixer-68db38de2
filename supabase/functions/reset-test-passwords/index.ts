@@ -20,6 +20,7 @@ Deno.serve(async (req) => {
     "teste1@playlike.com",
     "teste2@playlike.com",
     "juiz@playlike.com",
+    "aplanejamento@gmail.com",
   ];
   const newPassword = "teste123";
   const results: string[] = [];
