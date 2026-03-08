@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import CreatePostForm from "@/components/feed/CreatePostForm";
 import JuizPostForm from "@/components/feed/JuizPostForm";
 import { useAuth } from "@/contexts/AuthContext";
@@ -136,7 +136,14 @@ const Profile = () => {
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
   const [showCropDialog, setShowCropDialog] = useState(false);
   const [showAvatarZoom, setShowAvatarZoom] = useState(false);
-  const [showEmail, setShowEmail] = useState((profile as any)?.show_email_public ?? false);
+  const [showEmail, setShowEmail] = useState(profile?.show_email_public ?? false);
+
+  // Sync showEmail with profile data when it loads
+  useEffect(() => {
+    if (profile) {
+      setShowEmail(profile.show_email_public ?? false);
+    }
+  }, [profile?.show_email_public]);
 
   const { following } = useFollows();
   const toggleFollow = useToggleFollow();
@@ -396,6 +403,7 @@ const Profile = () => {
                     setShowEmail(val);
                     if (user) {
                       await supabase.from("profiles").update({ show_email_public: val } as any).eq("user_id", user.id);
+                      refreshProfile();
                     }
                   }}
                 />

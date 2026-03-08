@@ -872,6 +872,7 @@ export type Database = {
           blocked_until: string | null
           created_at: string | null
           eliminated_at: string | null
+          email: string | null
           id: string
           is_blocked: boolean | null
           is_bot: boolean | null
@@ -883,6 +884,7 @@ export type Database = {
           premium_end: string | null
           profile_text: string | null
           sex: string | null
+          show_email_public: boolean | null
           show_whatsapp: boolean | null
           tema_id: string | null
           total_likes: number | null
@@ -900,6 +902,7 @@ export type Database = {
           blocked_until?: string | null
           created_at?: string | null
           eliminated_at?: string | null
+          email?: string | null
           id?: string
           is_blocked?: boolean | null
           is_bot?: boolean | null
@@ -911,6 +914,7 @@ export type Database = {
           premium_end?: string | null
           profile_text?: string | null
           sex?: string | null
+          show_email_public?: boolean | null
           show_whatsapp?: boolean | null
           tema_id?: string | null
           total_likes?: number | null
@@ -928,6 +932,7 @@ export type Database = {
           blocked_until?: string | null
           created_at?: string | null
           eliminated_at?: string | null
+          email?: string | null
           id?: string
           is_blocked?: boolean | null
           is_bot?: boolean | null
@@ -939,6 +944,7 @@ export type Database = {
           premium_end?: string | null
           profile_text?: string | null
           sex?: string | null
+          show_email_public?: boolean | null
           show_whatsapp?: boolean | null
           tema_id?: string | null
           total_likes?: number | null

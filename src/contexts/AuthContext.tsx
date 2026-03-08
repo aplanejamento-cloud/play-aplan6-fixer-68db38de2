@@ -9,6 +9,8 @@ interface Profile {
   sex: string | null;
   whatsapp: string | null;
   show_whatsapp: boolean;
+  show_email_public: boolean;
+  email: string | null;
   avatar_url: string | null;
   bio: string | null;
   video_url: string | null;
@@ -99,10 +101,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 user_type: 'jogador',
                 total_likes: 1000,
                 avatar_url: meta.avatar_url || meta.picture || null,
+                email: currentSession.user.email || null,
               } as any);
               profileData = await fetchProfile(currentSession.user.id);
             }
 
+            // Sync email to profile if missing
+            if (profileData && !profileData.email && currentSession.user.email) {
+              await supabase.from('profiles').update({ email: currentSession.user.email } as any).eq('user_id', currentSession.user.id);
+              (profileData as any).email = currentSession.user.email;
+            }
             setProfile(profileData);
             setIsLoading(false);
           }, 100);
