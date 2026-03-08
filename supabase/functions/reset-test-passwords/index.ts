@@ -20,16 +20,26 @@ Deno.serve(async (req) => {
     "teste1@playlike.com",
     "teste2@playlike.com",
     "juiz@playlike.com",
+    "aplanejamento@gmail.com",
   ];
   const newPassword = "teste123";
   const results: string[] = [];
 
-  const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  const allUsers: any[] = [];
+  let page = 1;
+  while (true) {
+    const { data: { users: batch } } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (!batch || batch.length === 0) break;
+    allUsers.push(...batch);
+    if (batch.length < 1000) break;
+    page++;
+  }
+  const users = allUsers;
 
   for (const email of testEmails) {
     const user = users?.find((u: any) => u.email === email);
     if (!user) {
-      results.push(`❌ ${email}: usuário não encontrado`);
+      results.push(`❌ ${email}: não encontrado (total: ${users.length})`);
       continue;
     }
     const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, { password: newPassword });
@@ -38,6 +48,15 @@ Deno.serve(async (req) => {
     } else {
       results.push(`✅ ${email}: senha resetada para ${newPassword}`);
     }
+  }
+
+  // Also reset admin by user_id directly
+  const adminUserId = "8b67abe1-fa81-40bb-9afa-1e8b4375bf3f";
+  const { error: adminErr } = await supabaseAdmin.auth.admin.updateUserById(adminUserId, { password: "admin123" });
+  if (adminErr) {
+    results.push(`❌ admin (by id): ${adminErr.message}`);
+  } else {
+    results.push(`✅ admin (8b67...): senha resetada para admin123`);
   }
 
   return new Response(JSON.stringify({ results }), {

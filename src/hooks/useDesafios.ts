@@ -141,44 +141,15 @@ export function useDesafios() {
   };
 
   const aprovarDesafio = async (desafioId: string) => {
-    // Find the desafio to get its data
-    const desafio = pendentes.find((d: Desafio) => d.id === desafioId);
-    
-    const { error } = await supabase
-      .from("desafios")
-      .update({ aprovado: true })
-      .eq("id", desafioId);
+    const { error } = await supabase.rpc("approve_desafio", { p_desafio_id: desafioId } as any);
 
     if (!error) {
-      // Create a normal post from the approved desafio with coroinha + raio
-      if (desafio) {
-        const mainImage = desafio.image_urls?.[0] || null;
-        const { data: newPost } = await supabase.from("posts").insert({
-          user_id: desafio.juiz_id,
-          content: desafio.texto || "⚖️ Desafio aprovado!",
-          image_url: mainImage,
-          video_url: desafio.video_url || null,
-          tipo: "normal",
-          coroinha: true,
-          raio: true,
-          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        } as any).select().single();
-
-        // Insert additional images if any
-        if (newPost && desafio.image_urls && desafio.image_urls.length > 1) {
-          const rows = desafio.image_urls.slice(1).map((url, i) => ({
-            post_id: newPost.id,
-            image_url: url,
-            position: i + 1,
-          }));
-          await supabase.from("post_images").insert(rows as any);
-        }
-      }
-
       toast.success("Desafio aprovado e publicado como post! ✅");
       queryClient.invalidateQueries({ queryKey: ["desafios-pendentes"] });
       queryClient.invalidateQueries({ queryKey: ["desafios-aprovados"] });
       queryClient.invalidateQueries({ queryKey: ["posts"] });
+    } else {
+      toast.error("Erro ao aprovar desafio: " + error.message);
     }
   };
 
