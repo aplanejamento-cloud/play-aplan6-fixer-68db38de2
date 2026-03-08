@@ -1,10 +1,12 @@
 import { useParams, Navigate, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Heart, Users, Copy, UserPlus, UserMinus } from "lucide-react";
+import { Loader2, Heart, Users, Copy, UserPlus, UserMinus, MessageCircle, Mail, ChevronLeft, ChevronRight, Image as ImageIcon, Video } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import AppHeader from "@/components/AppHeader";
 import PostCard from "@/components/feed/PostCard";
@@ -15,19 +17,18 @@ const normalizeUsername = (name: string) =>
 
 const ProfileByName = () => {
   const params = useParams<{ username: string }>();
-  // Support both /@:username route param and direct /@username path
   const username = params.username || window.location.pathname.replace(/^\/@/, '');
   const { user } = useAuth();
   const navigate = useNavigate();
   const { following } = useFollows();
   const toggleFollow = useToggleFollow();
+  const [galleryIndex, setGalleryIndex] = useState(0);
 
   const { data: profileData, isLoading } = useQuery({
     queryKey: ["profile-by-name", username],
     queryFn: async () => {
       if (!username) return null;
       const target = normalizeUsername(username);
-      // Try exact ilike first with spaces restored from hyphens
       const nameWithSpaces = username.replace(/-/g, " ");
       const { data } = await supabase
         .from("profiles")
@@ -37,7 +38,6 @@ const ProfileByName = () => {
         const match = data.find((p) => normalizeUsername(p.name) === target);
         if (match) return match;
       }
-      // Fallback: fetch all profiles and normalize-match (handles no-space usernames like "gustavoreis")
       const { data: allData } = await supabase
         .from("profiles")
         .select("*");
@@ -72,6 +72,24 @@ const ProfileByName = () => {
     },
     enabled: !!profileData?.user_id,
   });
+
+  // Fetch user media (photos + videos)
+  const { data: userMedia = [] } = useQuery({
+    queryKey: ["user-media-public", profileData?.user_id],
+    queryFn: async () => {
+      if (!profileData?.user_id) return [];
+      const { data } = await supabase
+        .from("user_media")
+        .select("*")
+        .eq("user_id", profileData.user_id)
+        .order("position", { ascending: true });
+      return data || [];
+    },
+    enabled: !!profileData?.user_id,
+  });
+
+  const photos = userMedia.filter((m) => m.media_type === "photo");
+  const videos = userMedia.filter((m) => m.media_type === "video");
 
   if (isLoading) {
     return (
@@ -114,13 +132,6 @@ const ProfileByName = () => {
     toast.success("Link copiado!");
   };
 
-  const handleAction = () => {
-    if (!user) {
-      navigate("/");
-      return;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {user ? <AppHeader /> : (
@@ -152,6 +163,7 @@ const ProfileByName = () => {
               @{usernameNormalized}
               <Copy className="w-3 h-3" />
             </button>
+            <p className="text-xs text-muted-foreground capitalize mt-0.5">{profileData.user_type}</p>
           </div>
 
           {/* Stats */}
@@ -190,6 +202,74 @@ const ProfileByName = () => {
             <p className="text-sm text-foreground/80 text-center max-w-md">{profileData.bio}</p>
           )}
         </div>
+
+        {/* WhatsApp - visible if show_whatsapp is true */}
+        {(profileData as any)?.show_whatsapp && profileData.whatsapp && (
+          <Card className="bg-card/80 border-border">
+            <CardContent className="py-4 flex items-center gap-3">
+              <MessageCircle className="w-5 h-5 text-accent" />
+              <div>
+                <p className="text-xs text-muted-foreground">WhatsApp</p>
+                <p className="text-sm text-foreground">{profileData.whatsapp}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Email - visible if show_email_public is true */}
+        {(profileData as any)?.show_email_public && (profileData as any)?.email && (
+          <Card className="bg-card/80 border-border">
+            <CardContent className="py-4 flex items-center gap-3">
+              <Mail className="w-5 h-5 text-accent" />
+              <div>
+                <p className="text-xs text-muted-foreground">Email</p>
+                <p className="text-sm text-foreground">{(profileData as any).email}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Photo Gallery */}
+        {photos.length > 0 && (
+          <Card className="bg-card/80 border-border">
+            <CardContent className="py-4 space-y-3">
+              <h3 className="font-cinzel text-sm text-primary flex items-center gap-2">
+                <ImageIcon className="w-4 h-4" /> Fotos ({photos.length})
+              </h3>
+              <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                <img src={photos[galleryIndex]?.media_url} alt="" className="w-full h-full object-cover" />
+                {photos.length > 1 && (
+                  <>
+                    <button onClick={() => setGalleryIndex((i) => (i - 1 + photos.length) % photos.length)} className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/70 rounded-full p-1"><ChevronLeft className="w-5 h-5 text-foreground" /></button>
+                    <button onClick={() => setGalleryIndex((i) => (i + 1) % photos.length)} className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/70 rounded-full p-1"><ChevronRight className="w-5 h-5 text-foreground" /></button>
+                  </>
+                )}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-background/70 rounded-full px-2 py-0.5 text-xs text-foreground">{galleryIndex + 1}/{photos.length}</div>
+              </div>
+              {photos.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {photos.map((p, i) => (
+                    <button key={p.id} onClick={() => setGalleryIndex(i)} className={`w-14 h-14 rounded-md overflow-hidden flex-shrink-0 border-2 ${i === galleryIndex ? "border-primary" : "border-transparent"}`}>
+                      <img src={p.media_url} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Video */}
+        {videos.length > 0 && (
+          <Card className="bg-card/80 border-border">
+            <CardContent className="py-4 space-y-3">
+              <h3 className="font-cinzel text-sm text-primary flex items-center gap-2">
+                <Video className="w-4 h-4" /> Vídeo
+              </h3>
+              <video src={videos[0].media_url} controls className="w-full rounded-lg max-h-80" />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Action buttons for non-logged users */}
         {!user && (

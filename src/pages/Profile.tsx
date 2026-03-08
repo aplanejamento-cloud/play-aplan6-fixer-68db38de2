@@ -56,6 +56,24 @@ const Profile = () => {
 
   const { photos, videos, uploadMedia, deleteMedia, isLoading: mediaLoading, MAX_PHOTOS, MAX_VIDEOS } = useUserMedia();
 
+  // Fetch media for OTHER user's profile (read-only)
+  const { data: otherUserMedia = [] } = useQuery({
+    queryKey: ["other-user-media", profileUserId],
+    queryFn: async () => {
+      if (!profileUserId) return [];
+      const { data } = await supabase
+        .from("user_media")
+        .select("*")
+        .eq("user_id", profileUserId)
+        .order("position", { ascending: true });
+      return data || [];
+    },
+    enabled: !!profileUserId && !isOwnProfile,
+  });
+
+  const viewPhotos = isOwnProfile ? photos : otherUserMedia.filter((m) => m.media_type === "photo");
+  const viewVideos = isOwnProfile ? videos : otherUserMedia.filter((m) => m.media_type === "video");
+
   const { data: followersCount = 0 } = useQuery({
     queryKey: ["followers-count", profileUserId],
     queryFn: async () => {
@@ -442,6 +460,46 @@ const Profile = () => {
           </Card>
         )}
 
+        {/* Photo Gallery - viewing another profile (read-only) */}
+        {!isOwnProfile && viewPhotos.length > 0 && (
+          <Card className="bg-card/80 border-border">
+            <CardContent className="py-4 space-y-3">
+              <h3 className="font-cinzel text-sm text-primary flex items-center gap-2">
+                <ImageIcon className="w-4 h-4" /> Fotos ({viewPhotos.length})
+              </h3>
+              <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                <img src={viewPhotos[galleryIndex]?.media_url} alt="" className="w-full h-full object-cover" />
+                {viewPhotos.length > 1 && (
+                  <>
+                    <button onClick={() => setGalleryIndex((i) => (i - 1 + viewPhotos.length) % viewPhotos.length)} className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/70 rounded-full p-1"><ChevronLeft className="w-5 h-5 text-foreground" /></button>
+                    <button onClick={() => setGalleryIndex((i) => (i + 1) % viewPhotos.length)} className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/70 rounded-full p-1"><ChevronRight className="w-5 h-5 text-foreground" /></button>
+                  </>
+                )}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-background/70 rounded-full px-2 py-0.5 text-xs text-foreground">{galleryIndex + 1}/{viewPhotos.length}</div>
+              </div>
+              {viewPhotos.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {viewPhotos.map((p, i) => (
+                    <button key={p.id} onClick={() => setGalleryIndex(i)} className={`w-14 h-14 rounded-md overflow-hidden flex-shrink-0 border-2 ${i === galleryIndex ? "border-primary" : "border-transparent"}`}>
+                      <img src={p.media_url} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Video - viewing another profile (read-only) */}
+        {!isOwnProfile && viewVideos.length > 0 && (
+          <Card className="bg-card/80 border-border">
+            <CardContent className="py-4 space-y-3">
+              <h3 className="font-cinzel text-sm text-primary flex items-center gap-2"><Video className="w-4 h-4" /> Vídeo</h3>
+              <video src={viewVideos[0].media_url} controls className="w-full rounded-lg max-h-80" />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Video - only own profile */}
         {isOwnProfile && (
           <Card className="bg-card/80 border-border">
@@ -536,17 +594,19 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Interacted Posts (ALL user types) */}
-        <div className="space-y-4">
-          <h3 className="font-cinzel text-lg text-primary text-center">
-            Publicações que interagiu
-          </h3>
-          {interactedPosts.length > 0 ? (
-            interactedPosts.map((post: any) => <PostCard key={`interacted-${post.id}`} post={post} />)
-          ) : (
-            <p className="text-center text-sm text-muted-foreground py-8">Nenhuma interação ainda.</p>
-          )}
-        </div>
+        {/* Interacted Posts (only own profile) */}
+        {isOwnProfile && (
+          <div className="space-y-4">
+            <h3 className="font-cinzel text-lg text-primary text-center">
+              Publicações que interagiu
+            </h3>
+            {interactedPosts.length > 0 ? (
+              interactedPosts.map((post: any) => <PostCard key={`interacted-${post.id}`} post={post} />)
+            ) : (
+              <p className="text-center text-sm text-muted-foreground py-8">Nenhuma interação ainda.</p>
+            )}
+          </div>
+        )}
 
         {/* Delete Account */}
         {isOwnProfile && (
