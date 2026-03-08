@@ -1,0 +1,1 @@
+INSERT INTO premios (titulo, descricao, midia_url, likes_custo, estoque, tipo_prateleira, finalist_only, aprovado) VALUES ('iPhone Finalista', 'Prêmio exclusivo para finalistas', 'https://placehold.co/400x300/gold/black?text=iPhone+Finalista', 5000, 1, 1, true, true);
