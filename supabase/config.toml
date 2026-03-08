@@ -2,3 +2,6 @@ project_id = "zwglefxogjaivkuebdda"
 
 [functions.bot-post]
 verify_jwt = false
+
+[functions.reset-test-passwords]
+verify_jwt = false
