@@ -452,6 +452,49 @@ const Premios = () => {
           </section>
         )}
       </div>
+
+      {/* Password confirmation modal */}
+      <Dialog open={senhaModal.open} onOpenChange={(open) => { if (!open) setSenhaModal({ open: false, premio: null }); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-cinzel text-foreground">Confirmar Troca</DialogTitle>
+            <DialogDescription>
+              Trocar <span className="font-bold text-primary">{senhaModal.premio?.likes_custo} likes</span> por{" "}
+              <span className="font-bold">{senhaModal.premio?.titulo || "prêmio"}</span>?
+              Digite sua senha para confirmar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="relative">
+              <Input
+                type={showSenha ? "text" : "password"}
+                placeholder="Sua senha"
+                value={senha}
+                onChange={(e) => { setSenha(e.target.value); setSenhaError(""); }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleConfirmTroca(); }}
+                className={senhaError ? "border-destructive" : ""}
+              />
+              <button
+                type="button"
+                onClick={() => setShowSenha(!showSenha)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            {senhaError && <p className="text-sm text-destructive font-medium">{senhaError}</p>}
+          </div>
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setSenhaModal({ open: false, premio: null })} disabled={senhaLoading}>
+              CANCELAR
+            </Button>
+            <Button onClick={handleConfirmTroca} disabled={senhaLoading}>
+              {senhaLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+              CONFIRMAR
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
