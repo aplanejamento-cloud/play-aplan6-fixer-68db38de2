@@ -594,17 +594,19 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Interacted Posts (ALL user types) */}
-        <div className="space-y-4">
-          <h3 className="font-cinzel text-lg text-primary text-center">
-            Publicações que interagiu
-          </h3>
-          {interactedPosts.length > 0 ? (
-            interactedPosts.map((post: any) => <PostCard key={`interacted-${post.id}`} post={post} />)
-          ) : (
-            <p className="text-center text-sm text-muted-foreground py-8">Nenhuma interação ainda.</p>
-          )}
-        </div>
+        {/* Interacted Posts (only own profile) */}
+        {isOwnProfile && (
+          <div className="space-y-4">
+            <h3 className="font-cinzel text-lg text-primary text-center">
+              Publicações que interagiu
+            </h3>
+            {interactedPosts.length > 0 ? (
+              interactedPosts.map((post: any) => <PostCard key={`interacted-${post.id}`} post={post} />)
+            ) : (
+              <p className="text-center text-sm text-muted-foreground py-8">Nenhuma interação ainda.</p>
+            )}
+          </div>
+        )}
 
         {/* Delete Account */}
         {isOwnProfile && (
