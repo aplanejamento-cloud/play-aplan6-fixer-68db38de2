@@ -103,6 +103,18 @@ const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: 
         }
       }
 
+      // Get premio title for notification
+      const { data: premioData } = await supabase.from("premios").select("titulo").eq("id", premioId).single();
+      const premioTitulo = premioData?.titulo || "prêmio";
+
+      // Notify donor they received likes
+      await supabase.from("notifications").insert({
+        user_id: doacaoUserId,
+        tipo: "premio",
+        from_user_id: claimedUserId,
+        mensagem: `🎉 Você recebeu ${likesGastos} likes da sua ${premioTitulo}!`,
+      });
+
       qc.invalidateQueries({ queryKey: ["minhas_doacoes"] });
       qc.invalidateQueries({ queryKey: ["premios"] });
       setResult({ success: true, message: `✅ Likes transferidos! +${likesGastos} likes para você.` });
