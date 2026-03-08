@@ -18,9 +18,17 @@ const Ebooks = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("ebooks")
-        .select("*, profiles!inner(name, avatar_url)")
+        .select("*")
         .order("created_at", { ascending: false });
-      return data || [];
+      if (!data) return [];
+      // Fetch profile names
+      const userIds = [...new Set(data.map((e: any) => e.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, name, avatar_url")
+        .in("user_id", userIds);
+      const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+      return data.map((e: any) => ({ ...e, profile: profileMap.get(e.user_id) }));
     },
   });
 
