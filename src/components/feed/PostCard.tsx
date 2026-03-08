@@ -119,6 +119,29 @@ const PostCard = ({ post }: PostCardProps) => {
     }
   };
 
+  const handleDownloadMedia = async () => {
+    const mediaUrl = post.image_url || post.video_url || post.music_url;
+    if (!mediaUrl) return;
+    try {
+      const response = await fetch(mediaUrl, { mode: "cors" });
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      const ext = mediaUrl.split('.').pop()?.split('?')[0] || "jpg";
+      a.download = `playlike-${post.id.slice(0, 8)}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+      toast.success("Download iniciado! 📥");
+    } catch {
+      window.open(mediaUrl, "_blank");
+    }
+  };
+
+  const hasMedia = !!(post.image_url || post.video_url || post.music_url);
+
   return (
     <article className="bg-card border border-border rounded-xl overflow-hidden">
       {/* Desafio approved banner */}
