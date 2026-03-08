@@ -68,7 +68,7 @@ const Ebooks = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{eb.titulo}</p>
-                  <p className="text-xs text-muted-foreground">por {eb.profiles?.name || "Anônimo"}</p>
+                  <p className="text-xs text-muted-foreground">por {eb.profile?.name || "Anônimo"}</p>
                 </div>
                 <div className="flex gap-1">
                   <Button size="sm" variant="outline" asChild>
