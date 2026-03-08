@@ -119,6 +119,11 @@ const GlobalNav = () => {
                 {badgeCount}
               </Badge>
             )}
+            {showLowLikes && (
+              <Badge className="bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
+                !
+              </Badge>
+            )}
           </button>
         );
       })}
