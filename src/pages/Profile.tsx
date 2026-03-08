@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import CreatePostForm from "@/components/feed/CreatePostForm";
 import JuizPostForm from "@/components/feed/JuizPostForm";
 import { useAuth } from "@/contexts/AuthContext";
