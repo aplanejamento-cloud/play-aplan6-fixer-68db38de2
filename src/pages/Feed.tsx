@@ -55,7 +55,8 @@ const Feed = () => {
       const createdAt = new Date(profile.created_at);
       const now = new Date();
       const diffDays = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-      if (diffDays >= 15) {
+      const isIncomplete = !profile.name || profile.name.trim() === "" || !profile.avatar_url;
+      if (diffDays >= 15 && isIncomplete) {
         const dismissed = sessionStorage.getItem("payment_dismissed");
         if (!dismissed) setShowPayment(true);
       }
