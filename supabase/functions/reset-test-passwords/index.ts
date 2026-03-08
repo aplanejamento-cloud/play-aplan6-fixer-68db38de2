@@ -25,7 +25,16 @@ Deno.serve(async (req) => {
   const newPassword = "teste123";
   const results: string[] = [];
 
-  const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  const allUsers: any[] = [];
+  let page = 1;
+  while (true) {
+    const { data: { users: batch } } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (!batch || batch.length === 0) break;
+    allUsers.push(...batch);
+    if (batch.length < 1000) break;
+    page++;
+  }
+  const users = allUsers;
 
   for (const email of testEmails) {
     const user = users?.find((u: any) => u.email === email);
