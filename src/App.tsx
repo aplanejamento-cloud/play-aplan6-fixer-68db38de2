@@ -36,6 +36,7 @@ import SosAjuda from "./pages/SosAjuda";
 import AuthCallback from "./pages/AuthCallback";
 import Temas from "./pages/Temas";
 import SetupTest from "./pages/SetupTest";
+import Ebooks from "./pages/Ebooks";
 import DailyReportModal from "@/components/retention/DailyReportModal";
 import JuizDoacaoPopup from "@/components/retention/JuizDoacaoPopup";
 
