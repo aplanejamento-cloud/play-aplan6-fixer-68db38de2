@@ -54,10 +54,11 @@ const AdminPixPanel = () => {
                 c.status === "pendente" ? "border-yellow-500/30 bg-yellow-500/5" : "border-border bg-muted/20"
               )}>
                 <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      {(c as any).tipo === "turbo" ? "🔥 Turbo x10" : (c as any).tipo === "turbo_bomba" ? "💣 Turbo Bomba" : (c as any).tipo === "premium" ? "🏆 Premium" : `${c.likes_adquiridos} likes`}
-                    </p>
+                   <div>
+                     <p className="text-sm font-medium text-foreground">
+                       {(c as any).tipo === "turbo" ? "🔥 Turbo x10" : (c as any).tipo === "turbo_bomba" ? "💣 Turbo Bomba" : (c as any).tipo === "premium" ? "🏆 Premium" : `${c.likes_adquiridos} likes`}
+                       {c.status === "aprovado" && <span className="text-xs text-green-500 ml-1">(auto)</span>}
+                     </p>
                     <p className="text-xs text-muted-foreground">R${Number(c.valor).toFixed(2)} • {new Date(c.created_at).toLocaleDateString("pt-BR")}</p>
                   </div>
                   <span className={cn(
