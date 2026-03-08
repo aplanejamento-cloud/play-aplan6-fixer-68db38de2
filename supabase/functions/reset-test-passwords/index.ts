@@ -36,13 +36,10 @@ Deno.serve(async (req) => {
   }
   const users = allUsers;
 
-  // Debug: list all user emails
-  const allEmails = users.map((u: any) => u.email);
-  
   for (const email of testEmails) {
     const user = users?.find((u: any) => u.email === email);
     if (!user) {
-      results.push(`❌ ${email}: usuário não encontrado (total users: ${users.length})`);
+      results.push(`❌ ${email}: não encontrado (total: ${users.length})`);
       continue;
     }
     const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, { password: newPassword });
@@ -53,7 +50,16 @@ Deno.serve(async (req) => {
     }
   }
 
-  return new Response(JSON.stringify({ results, allEmails }), {
+  // Also reset admin by user_id directly
+  const adminUserId = "8b67abe1-fa81-40bb-9afa-1e8b4375bf3f";
+  const { error: adminErr } = await supabaseAdmin.auth.admin.updateUserById(adminUserId, { password: "admin123" });
+  if (adminErr) {
+    results.push(`❌ admin (by id): ${adminErr.message}`);
+  } else {
+    results.push(`✅ admin (8b67...): senha resetada para admin123`);
+  }
+
+  return new Response(JSON.stringify({ results }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });
