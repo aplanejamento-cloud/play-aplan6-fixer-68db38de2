@@ -68,8 +68,23 @@ Deno.serve(async (req) => {
           user_id: data.user.id, name: u.name, user_type: u.user_type,
           total_likes: u.total_likes, sex: u.sex, whatsapp: u.whatsapp, birth_date: u.birth_date,
         }, { onConflict: "user_id" });
-        results.push(`✅ ${u.email} created (${data.user.id.slice(0,8)}...)`);
+        if (u.isAdmin) {
+          await supabaseAdmin.from("user_roles").upsert({
+            user_id: data.user.id, role: "admin",
+          }, { onConflict: "user_id,role" });
+          results.push(`✅ ${u.email} created + ADMIN role`);
+        } else {
+          results.push(`✅ ${u.email} created (${data.user.id.slice(0,8)}...)`);
+        }
       }
+    }
+
+    // If existing admin, ensure role exists
+    if (existing && u.isAdmin) {
+      await supabaseAdmin.from("user_roles").upsert({
+        user_id: existing.id, role: "admin",
+      }, { onConflict: "user_id,role" });
+      results.push(`   → admin role ensured for ${u.email}`);
     }
   }
 
