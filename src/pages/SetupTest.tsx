@@ -83,6 +83,18 @@ const SetupTest = () => {
     }
   };
 
+  const handleLoginAdmin = async (email: string) => {
+    setLoginResult("Fazendo login admin " + email + "...");
+    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signInWithPassword({ email, password: "admin123" });
+    if (error) {
+      setLoginResult("❌ " + error.message);
+    } else {
+      setLoginResult("✅ Admin Login OK! Redirecionando para /feed...");
+      setTimeout(() => { window.location.href = "/feed"; }, 1000);
+    }
+  };
+
   const handleLoginDuels = async (email: string) => {
     setLoginResult("Fazendo login " + email + " → /duels...");
     await supabase.auth.signOut();
