@@ -45,7 +45,7 @@ export function usePremios(prateleira?: 1 | 2) {
   return useQuery({
     queryKey: ["premios", prateleira],
     queryFn: async () => {
-      let q = supabase.from("premios").select("*").eq("aprovado", true).gt("estoque", 0).order("created_at", { ascending: false });
+      let q = supabase.from("premios").select("*").eq("aprovado", true).gte("estoque", 0).order("created_at", { ascending: false });
       if (prateleira) q = q.eq("tipo_prateleira", prateleira);
       const { data, error } = await q;
       if (error) throw error;
