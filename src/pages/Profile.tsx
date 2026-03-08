@@ -56,6 +56,24 @@ const Profile = () => {
 
   const { photos, videos, uploadMedia, deleteMedia, isLoading: mediaLoading, MAX_PHOTOS, MAX_VIDEOS } = useUserMedia();
 
+  // Fetch media for OTHER user's profile (read-only)
+  const { data: otherUserMedia = [] } = useQuery({
+    queryKey: ["other-user-media", profileUserId],
+    queryFn: async () => {
+      if (!profileUserId) return [];
+      const { data } = await supabase
+        .from("user_media")
+        .select("*")
+        .eq("user_id", profileUserId)
+        .order("position", { ascending: true });
+      return data || [];
+    },
+    enabled: !!profileUserId && !isOwnProfile,
+  });
+
+  const viewPhotos = isOwnProfile ? photos : otherUserMedia.filter((m) => m.media_type === "photo");
+  const viewVideos = isOwnProfile ? videos : otherUserMedia.filter((m) => m.media_type === "video");
+
   const { data: followersCount = 0 } = useQuery({
     queryKey: ["followers-count", profileUserId],
     queryFn: async () => {
