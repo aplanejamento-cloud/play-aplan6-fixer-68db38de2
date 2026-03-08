@@ -86,27 +86,55 @@ const ComprarLikes = () => {
     }
   };
 
-  // Poll for payment approval
+  // Poll for payment approval + auto-credit likes
   const checkApproval = useCallback(async () => {
-    if (!user || !polling) return;
+    if (!user || !polling || !pixData?.compra_id) return;
     const { data } = await supabase
       .from("compras_pix")
-      .select("status")
-      .eq("usuario_id", user.id)
-      .eq("status", "aprovado")
-      .order("created_at", { ascending: false })
-      .limit(1);
+      .select("status, likes_adquiridos, tipo")
+      .eq("id", pixData.compra_id)
+      .single();
 
-    if (data && data.length > 0) {
+    if (data?.status === "aprovado") {
+      // Auto-credit likes
+      const likesToAdd = data.likes_adquiridos || 0;
+      if (likesToAdd > 0) {
+        const { data: currentProfile } = await supabase
+          .from("profiles")
+          .select("total_likes")
+          .eq("user_id", user.id)
+          .single();
+        const newLikes = (currentProfile?.total_likes || 0) + likesToAdd;
+        await supabase.from("profiles").update({ total_likes: newLikes }).eq("user_id", user.id);
+      }
+
+      // Handle turbo/premium activation
+      if (data.tipo === "turbo" || data.tipo === "turbo_bomba") {
+        const end = new Date();
+        end.setDate(end.getDate() + 30);
+        await supabase.from("profiles").update({
+          multiplicador_ativo: data.tipo === "turbo_bomba" ? 10 : 10,
+          multiplicador_end: end.toISOString(),
+        }).eq("user_id", user.id);
+      }
+      if (data.tipo === "premium" || data.tipo === "renovacao") {
+        const end = new Date();
+        end.setDate(end.getDate() + 30);
+        await supabase.from("profiles").update({
+          premium_active: true,
+          premium_end: end.toISOString(),
+        }).eq("user_id", user.id);
+      }
+
       setPolling(false);
       setPixData(null);
       setSelectedTurbo(null);
       setSelectedLikes(null);
       queryClient.invalidateQueries({ queryKey: ["compras-pix"] });
       queryClient.invalidateQueries({ queryKey: ["my-profile-turbo"] });
-      toast.success("✅ PIX aprovado automaticamente! Créditos adicionados!");
+      toast.success(`✅ PIX aprovado! +${likesToAdd} likes adicionados!`);
     }
-  }, [user, polling, queryClient]);
+  }, [user, polling, pixData, queryClient]);
 
   useEffect(() => {
     if (!polling) return;
