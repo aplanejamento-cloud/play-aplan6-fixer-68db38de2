@@ -178,22 +178,33 @@ const PremiosTab = () => {
         </div>
         <div className="grid grid-cols-2 gap-2">
           <Input placeholder="Título" value={titulo} onChange={(e) => setTitulo(e.target.value)} className="col-span-2" />
-          <div>
-            <label className="text-xs text-muted-foreground">Custo (likes)</label>
-            <Input type="number" min={0} value={likesCusto} onChange={(e) => setLikesCusto(Number(e.target.value))} />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Estoque</label>
-            <Input type="number" min={1} value={estoque} onChange={(e) => setEstoque(Number(e.target.value))} />
-          </div>
+          <Input placeholder="Descrição (opcional)" value={descricao} onChange={(e) => setDescricao(e.target.value)} className="col-span-2" />
+          {!finalistOnly && (
+            <>
+              <div>
+                <label className="text-xs text-muted-foreground">Custo (likes)</label>
+                <Input type="number" min={0} value={likesCusto} onChange={(e) => setLikesCusto(Number(e.target.value))} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Estoque</label>
+                <Input type="number" min={1} value={estoque} onChange={(e) => setEstoque(Number(e.target.value))} />
+              </div>
+            </>
+          )}
         </div>
-        <Select value={prateleira} onValueChange={(v) => setPrateleira(v as "1" | "2")}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1">🏆 Prêmios Maiores</SelectItem>
-            <SelectItem value="2">📍 Retirada Doador</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2 p-2 rounded-lg border border-primary/30 bg-primary/5">
+          <input type="checkbox" id="finalist-only" checked={finalistOnly} onChange={(e) => setFinalistOnly(e.target.checked)} className="w-4 h-4 accent-primary" />
+          <label htmlFor="finalist-only" className="text-xs font-medium text-foreground">🏆 Somente Para Finalistas (Prateleira 1, sem troca de likes)</label>
+        </div>
+        {!finalistOnly && (
+          <Select value={prateleira} onValueChange={(v) => setPrateleira(v as "1" | "2")}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">🏆 Prêmios Maiores</SelectItem>
+              <SelectItem value="2">📍 Retirada Doador</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
         <Button className="w-full" disabled={adicionarPremio.isPending || uploading} onClick={handleAdd}>
           {adicionarPremio.isPending || uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
           Adicionar Prêmio
