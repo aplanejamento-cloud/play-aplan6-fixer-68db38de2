@@ -1,13 +1,22 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, Heart, Crown, User } from "lucide-react";
+import { LogOut, Heart, Crown, User, Zap } from "lucide-react";
 import GlobalNav from "./GlobalNav";
 import NotificationsDropdown from "./NotificationsDropdown";
 
 const AppHeader = () => {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
+
+  // Check if turbo is active (multiplicador > 1 and not expired)
+  const now = new Date();
+  const turboActive = 
+    profile?.multiplicador_ativo && 
+    profile.multiplicador_ativo > 1 && 
+    (!profile.multiplicador_end || new Date(profile.multiplicador_end) > now);
+
+  const turboMultiplier = turboActive ? profile?.multiplicador_ativo : null;
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border">
@@ -21,6 +30,12 @@ const AppHeader = () => {
             <Heart className="w-3.5 h-3.5 fill-primary text-primary" />
             <span className="font-bold text-primary">{profile?.total_likes?.toLocaleString("pt-BR")}</span>
           </div>
+          {turboMultiplier && (
+            <div className="flex items-center gap-0.5 text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded-full animate-pulse">
+              <Zap className="w-3 h-3 fill-primary" />
+              <span className="font-black">{turboMultiplier}x</span>
+            </div>
+          )}
           <div className="flex items-center gap-1 text-xs">
             {profile?.user_type === "jogador" ? (
               <Crown className="w-3.5 h-3.5 text-primary" />
