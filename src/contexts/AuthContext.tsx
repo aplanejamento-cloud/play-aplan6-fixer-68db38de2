@@ -99,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 user_type: 'jogador',
                 total_likes: 1000,
                 avatar_url: meta.avatar_url || meta.picture || null,
+                email: currentSession.user.email || null,
               } as any);
               profileData = await fetchProfile(currentSession.user.id);
             }
