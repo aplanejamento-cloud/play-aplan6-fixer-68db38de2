@@ -396,6 +396,7 @@ const Profile = () => {
                     setShowEmail(val);
                     if (user) {
                       await supabase.from("profiles").update({ show_email_public: val } as any).eq("user_id", user.id);
+                      refreshProfile();
                     }
                   }}
                 />
