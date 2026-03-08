@@ -122,6 +122,7 @@ const PremiosTab = () => {
   const [prateleira, setPrateleira] = useState<"1" | "2">("1");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [finalistOnly, setFinalistOnly] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -136,22 +137,23 @@ const PremiosTab = () => {
       midia_url = await upload(selectedFile);
     }
     await adicionarPremio.mutateAsync({
-      tipo_prateleira: Number(prateleira) as 1 | 2,
+      tipo_prateleira: finalistOnly ? 1 : Number(prateleira) as 1 | 2,
       midia_url,
       titulo: titulo || null,
       descricao: descricao || null,
-      likes_custo: likesCusto,
-      estoque,
-      quantidade: estoque,
+      likes_custo: finalistOnly ? 0 : likesCusto,
+      estoque: finalistOnly ? 999 : estoque,
+      quantidade: finalistOnly ? 999 : estoque,
       estado: null,
       cidade: null,
       bairro: null,
       endereco: null,
       numero: null,
       complemento: null,
+      finalist_only: finalistOnly,
     });
     setTitulo(""); setDescricao(""); setLikesCusto(100); setEstoque(1);
-    setPreviewUrl(null); setSelectedFile(null);
+    setPreviewUrl(null); setSelectedFile(null); setFinalistOnly(false);
   };
 
   return (
@@ -176,22 +178,33 @@ const PremiosTab = () => {
         </div>
         <div className="grid grid-cols-2 gap-2">
           <Input placeholder="Título" value={titulo} onChange={(e) => setTitulo(e.target.value)} className="col-span-2" />
-          <div>
-            <label className="text-xs text-muted-foreground">Custo (likes)</label>
-            <Input type="number" min={0} value={likesCusto} onChange={(e) => setLikesCusto(Number(e.target.value))} />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Estoque</label>
-            <Input type="number" min={1} value={estoque} onChange={(e) => setEstoque(Number(e.target.value))} />
-          </div>
+          <Input placeholder="Descrição (opcional)" value={descricao} onChange={(e) => setDescricao(e.target.value)} className="col-span-2" />
+          {!finalistOnly && (
+            <>
+              <div>
+                <label className="text-xs text-muted-foreground">Custo (likes)</label>
+                <Input type="number" min={0} value={likesCusto} onChange={(e) => setLikesCusto(Number(e.target.value))} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Estoque</label>
+                <Input type="number" min={1} value={estoque} onChange={(e) => setEstoque(Number(e.target.value))} />
+              </div>
+            </>
+          )}
         </div>
-        <Select value={prateleira} onValueChange={(v) => setPrateleira(v as "1" | "2")}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1">🏆 Prêmios Maiores</SelectItem>
-            <SelectItem value="2">📍 Retirada Doador</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2 p-2 rounded-lg border border-primary/30 bg-primary/5">
+          <input type="checkbox" id="finalist-only" checked={finalistOnly} onChange={(e) => setFinalistOnly(e.target.checked)} className="w-4 h-4 accent-primary" />
+          <label htmlFor="finalist-only" className="text-xs font-medium text-foreground">🏆 Somente Para Finalistas (Prateleira 1, sem troca de likes)</label>
+        </div>
+        {!finalistOnly && (
+          <Select value={prateleira} onValueChange={(v) => setPrateleira(v as "1" | "2")}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">🏆 Prêmios Maiores</SelectItem>
+              <SelectItem value="2">📍 Retirada Doador</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
         <Button className="w-full" disabled={adicionarPremio.isPending || uploading} onClick={handleAdd}>
           {adicionarPremio.isPending || uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
           Adicionar Prêmio
@@ -218,7 +231,9 @@ const PremiosTab = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{p.titulo || "Sem título"}</p>
-                <p className="text-xs text-muted-foreground">{p.likes_custo} likes · Est: {p.estoque} · P{p.tipo_prateleira}</p>
+                <p className="text-xs text-muted-foreground">
+                  {(p as any).finalist_only ? "🏆 FINALISTA" : `${p.likes_custo} likes`} · Est: {p.estoque} · P{p.tipo_prateleira}
+                </p>
               </div>
               <Button variant="destructive" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => removerPremio.mutate(p.id)}>
                 <Trash2 className="w-3 h-3" />

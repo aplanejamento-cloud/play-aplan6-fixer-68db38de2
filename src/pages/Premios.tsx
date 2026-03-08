@@ -163,7 +163,7 @@ const PrizeCard = ({ premio, userLikes, onResgatar, isRescuing }: {
               Estoque: {premio.estoque}
             </p>
           </div>
-          {premio.estoque > 0 && (
+          {premio.estoque > 0 && !isFinalistOnly && (
             <Button size="sm" onClick={() => onResgatar(premio)} disabled={isRescuing || !canAfford || wouldEliminate}
               className="font-cinzel font-bold" variant={canAfford && !wouldEliminate ? "default" : "outline"}>
               {isRescuing ? <Loader2 className="w-4 h-4 animate-spin" /> : wouldEliminate ? "JOGUE MAIS!" : canAfford ? "TROCAR" : "SEM SALDO"}
