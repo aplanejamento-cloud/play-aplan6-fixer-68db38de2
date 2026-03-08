@@ -32,6 +32,7 @@ import AdminPixLogs from "./pages/AdminPixLogs";
 import AdminPremiumUsers from "./pages/AdminPremiumUsers";
 import AdminCulturaStats from "./pages/AdminCulturaStats";
 import AdminResgates from "./pages/AdminResgates";
+import AdminAnalytics from "./pages/AdminAnalytics";
 import Eliminados from "./pages/Eliminados";
 import SosAjuda from "./pages/SosAjuda";
 import AuthCallback from "./pages/AuthCallback";
