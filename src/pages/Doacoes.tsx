@@ -60,7 +60,7 @@ const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: 
         .eq("user_id", claimedUserId)
         .single();
 
-      if (!claimedUser || (claimedUser as any).total_likes < likesGastos) {
+      if (!claimedUser || claimedUser.total_likes! < likesGastos) {
         setResult({ success: false, message: "Usuário sem likes suficientes" });
         toast.error("Usuário sem likes suficientes");
         setVerifying(false);
