@@ -138,6 +138,13 @@ const Profile = () => {
   const [showAvatarZoom, setShowAvatarZoom] = useState(false);
   const [showEmail, setShowEmail] = useState(profile?.show_email_public ?? false);
 
+  // Sync showEmail with profile data when it loads
+  useEffect(() => {
+    if (profile) {
+      setShowEmail(profile.show_email_public ?? false);
+    }
+  }, [profile?.show_email_public]);
+
   const { following } = useFollows();
   const toggleFollow = useToggleFollow();
   const isFollowing = !isOwnProfile && profileUserId ? following.includes(profileUserId) : false;
