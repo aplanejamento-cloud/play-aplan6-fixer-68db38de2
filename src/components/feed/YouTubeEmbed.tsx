@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useEffect, useState, useCallback } from "react";
+import { Play, Pause } from "lucide-react";
 
 interface YouTubeEmbedProps {
   url: string;
@@ -18,18 +19,96 @@ function extractYouTubeId(url: string): string | null {
 
 const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
   const videoId = useMemo(() => extractYouTubeId(url), [url]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const instanceId = useMemo(() => `yt-${videoId}-${Math.random().toString(36).slice(2, 8)}`, [videoId]);
+
+  const sendCommand = useCallback((func: string) => {
+    iframeRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: "command", func, args: "" }),
+      "*"
+    );
+  }, []);
+
+  // Toggle play/pause on overlay click
+  const handleToggle = useCallback(() => {
+    if (playing) {
+      sendCommand("pauseVideo");
+      setPlaying(false);
+    } else {
+      // Notify other players to stop
+      window.dispatchEvent(new CustomEvent("youtube-play", { detail: instanceId }));
+      sendCommand("playVideo");
+      setPlaying(true);
+    }
+  }, [playing, sendCommand, instanceId]);
+
+  // Pause when another YouTube player starts
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail !== instanceId) {
+        sendCommand("pauseVideo");
+        setPlaying(false);
+      }
+    };
+    window.addEventListener("youtube-play", handler);
+    return () => window.removeEventListener("youtube-play", handler);
+  }, [instanceId, sendCommand]);
+
+  // IntersectionObserver: auto-pause when out of viewport
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) {
+          sendCommand("pauseVideo");
+          setPlaying(false);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [sendCommand]);
+
   if (!videoId) return null;
 
+  const iframeSrc = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&modestbranding=1&rel=0&playsinline=1&origin=${window.location.origin}`;
+
   return (
-    <div className="w-full aspect-video rounded-lg overflow-hidden">
+    <div ref={containerRef} className="relative w-full aspect-video rounded-lg overflow-hidden bg-black">
       <iframe
-        src={`https://www.youtube.com/embed/${videoId}`}
+        ref={iframeRef}
+        src={iframeSrc}
         title="YouTube video"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-        className="w-full h-full border-0"
+        allowFullScreen={false}
+        className="w-full h-full border-0 pointer-events-none"
         loading="lazy"
       />
+      {/* Overlay blocks all clicks to YouTube */}
+      <div
+        onClick={handleToggle}
+        className="absolute inset-0 cursor-pointer flex items-center justify-center z-10"
+      >
+        {!playing && (
+          <div className="bg-black/60 rounded-full p-4 text-white hover:bg-black/80 transition-colors">
+            <Play className="w-8 h-8" />
+          </div>
+        )}
+        {playing && (
+          <div className="bg-black/0 hover:bg-black/30 transition-colors absolute inset-0 flex items-center justify-center">
+            <div className="opacity-0 hover:opacity-100 transition-opacity bg-black/60 rounded-full p-4 text-white">
+              <Pause className="w-8 h-8" />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
