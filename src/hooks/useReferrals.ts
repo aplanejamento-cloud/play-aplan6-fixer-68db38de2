@@ -2,97 +2,111 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-export interface Referral {
+export interface ReferralShare {
   id: string;
   user_id: string;
   network: string;
-  used_first_time: boolean;
-  friends_invited: number;
-  likes_earned: number;
-  created_at: string;
+  share_code: string;
+  shared_at: string;
+  verified_at: string | null;
+  clicks_count: number;
+  likes_awarded: boolean;
 }
 
 export function useReferrals() {
   const { user, refreshProfile } = useAuth();
-  const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [shares, setShares] = useState<ReferralShare[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchReferrals = async () => {
+  const fetchShares = async () => {
     if (!user) return;
+    setIsLoading(true);
     const { data } = await supabase
-      .from("user_referrals")
+      .from("referral_shares")
       .select("*")
-      .eq("user_id", user.id);
-    setReferrals((data as Referral[]) || []);
+      .eq("user_id", user.id)
+      .order("shared_at", { ascending: false });
+    setShares((data as ReferralShare[]) || []);
     setIsLoading(false);
   };
 
   useEffect(() => {
-    fetchReferrals();
+    fetchShares();
+
+    // Subscribe to realtime updates for shares
+    if (user) {
+      const channel = supabase
+        .channel("referral-updates")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "referral_shares",
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => {
+            fetchShares();
+            refreshProfile();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
   }, [user]);
 
-  const claimNetwork = async (network: string) => {
-    if (!user) return { success: false, likes: 0 };
+  const generateShareCode = () => {
+    return Math.random().toString(36).substring(2, 10).toUpperCase();
+  };
 
-    const existing = referrals.find((r) => r.network === network);
-    if (existing) {
-      // Already claimed — give 10 likes
-      const { error } = await supabase
-        .from("user_referrals")
-        .update({
-          friends_invited: existing.friends_invited + 1,
-          likes_earned: existing.likes_earned + 10,
-          used_first_time: false,
-        })
-        .eq("id", existing.id);
+  const createShare = async (network: string): Promise<{ shareCode: string; trackingUrl: string } | null> => {
+    if (!user) return null;
 
-      if (!error) {
-        // Update profile total_likes
-        await supabase.rpc("has_role", { _user_id: user.id, _role: "user" }); // dummy to keep connection
-        await supabase
-          .from("profiles")
-          .update({ total_likes: (await getCurrentLikes()) + 10 })
-          .eq("user_id", user.id);
-        await refreshProfile();
-        await fetchReferrals();
-        return { success: true, likes: 10 };
-      }
-      return { success: false, likes: 0 };
-    }
+    const shareCode = generateShareCode();
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const trackingUrl = `https://${projectId}.supabase.co/functions/v1/track-referral?code=${shareCode}`;
 
-    // First time — give 1000 likes
-    const { error } = await supabase.from("user_referrals").insert({
+    const { error } = await supabase.from("referral_shares").insert({
       user_id: user.id,
       network,
-      used_first_time: true,
-      friends_invited: 1,
-      likes_earned: 1000,
-    });
+      share_code: shareCode,
+    } as any);
 
-    if (!error) {
-      await supabase
-        .from("profiles")
-        .update({ total_likes: (await getCurrentLikes()) + 1000 })
-        .eq("user_id", user.id);
-      await refreshProfile();
-      await fetchReferrals();
-      return { success: true, likes: 1000 };
+    if (error) {
+      console.error("Error creating share:", error);
+      return null;
     }
-    return { success: false, likes: 0 };
+
+    await fetchShares();
+    return { shareCode, trackingUrl };
   };
 
-  const getCurrentLikes = async (): Promise<number> => {
-    if (!user) return 0;
-    const { data } = await supabase
-      .from("profiles")
-      .select("total_likes")
-      .eq("user_id", user.id)
-      .single();
-    return data?.total_likes || 0;
+  // Stats
+  const totalClicks = shares.reduce((sum, s) => sum + (s.clicks_count || 0), 0);
+  const verifiedShares = shares.filter((s) => s.likes_awarded).length;
+  const pendingShares = shares.filter((s) => !s.likes_awarded && s.clicks_count === 0).length;
+  const networksUsed = [...new Set(shares.filter((s) => s.likes_awarded).map((s) => s.network))].length;
+  const totalLikesEarned = shares.reduce((sum, s) => {
+    if (!s.likes_awarded) return sum;
+    // First use of network = 1000, subsequent = 10
+    const firstUseOfNetwork = shares.find(
+      (other) => other.network === s.network && other.likes_awarded && other.shared_at <= s.shared_at
+    );
+    return sum + (firstUseOfNetwork?.id === s.id ? 1000 : 10);
+  }, 0);
+
+  return {
+    shares,
+    isLoading,
+    createShare,
+    fetchShares,
+    totalClicks,
+    verifiedShares,
+    pendingShares,
+    networksUsed,
+    totalLikesEarned,
   };
-
-  const totalLikesEarned = referrals.reduce((sum, r) => sum + r.likes_earned, 0);
-  const networksUsed = referrals.length;
-
-  return { referrals, isLoading, claimNetwork, totalLikesEarned, networksUsed, fetchReferrals };
 }
