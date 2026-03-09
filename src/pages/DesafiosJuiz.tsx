@@ -10,8 +10,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Gavel, Video, Send, Clock, CheckCircle, XCircle, Heart } from "lucide-react";
+import { Gavel, Video, Send, Clock, CheckCircle, XCircle, Heart, Trophy } from "lucide-react";
 import { toast } from "sonner";
+import ChallengeProofModal from "@/components/feed/ChallengeProofModal";
 
 const DesafiosJuiz = () => {
   const { user, profile } = useAuth();
