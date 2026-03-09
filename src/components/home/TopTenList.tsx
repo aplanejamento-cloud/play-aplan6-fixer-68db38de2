@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { Heart, Medal } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
