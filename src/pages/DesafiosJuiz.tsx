@@ -10,8 +10,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Gavel, Video, Send, Clock, CheckCircle, XCircle, Heart } from "lucide-react";
+import { Gavel, Video, Send, Clock, CheckCircle, XCircle, Heart, Trophy } from "lucide-react";
 import { toast } from "sonner";
+import ChallengeProofModal from "@/components/feed/ChallengeProofModal";
 
 const DesafiosJuiz = () => {
   const { user, profile } = useAuth();
@@ -20,6 +21,7 @@ const DesafiosJuiz = () => {
   const [texto, setTexto] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [proofDesafio, setProofDesafio] = useState<Desafio | null>(null);
 
   const isJuiz = profile?.user_type === "juiz";
 
@@ -166,12 +168,31 @@ const DesafiosJuiz = () => {
                   {d.video_url && (
                     <video src={d.video_url} controls className="w-full rounded-lg max-h-64 object-cover" />
                   )}
+                  {/* Fiz isso! button for jogadores */}
+                  {user && profile?.user_type !== "juiz" && (
+                    <Button
+                      onClick={() => setProofDesafio(d)}
+                      className="w-full bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20"
+                      variant="outline"
+                    >
+                      <Trophy className="w-4 h-4 mr-2" /> Fiz isso! 💪
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ))
           )}
         </div>
-      </main>
+      {/* Challenge Proof Modal */}
+      {proofDesafio && (
+        <ChallengeProofModal
+          open={!!proofDesafio}
+          onOpenChange={(open) => { if (!open) setProofDesafio(null); }}
+          desafioTexto={proofDesafio.texto || "Desafio"}
+          desafioId={proofDesafio.id}
+        />
+      )}
+    </main>
     </div>
   );
 };

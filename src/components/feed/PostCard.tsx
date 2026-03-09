@@ -9,7 +9,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useRemixCount } from "@/hooks/useRemix";
 import { useDuels } from "@/hooks/useDuels";
 import { Button } from "@/components/ui/button";
-import { Heart, Flame, Bomb, UserPlus, UserMinus, Trash2, Crown, User, Music, Gift, Repeat2, Sparkles, Swords, Zap, Share2, Download } from "lucide-react";
+import { Heart, Flame, Bomb, UserPlus, UserMinus, Trash2, Crown, User, Music, Gift, Repeat2, Sparkles, Swords, Zap, Share2, Download, Trophy } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -210,6 +210,14 @@ const PostCard = ({ post }: PostCardProps) => {
           <div className="mt-2 flex items-center gap-1.5 bg-primary/10 border border-primary/30 rounded-full px-3 py-1 w-fit">
             <Sparkles className="w-3.5 h-3.5 text-primary" />
             <span className="text-xs font-bold text-primary">✅ Postou com tema • {post.multiplicador}x likes</span>
+          </div>
+        )}
+
+        {/* Challenge proof badge */}
+        {post.categoria === "desafio-prova" && (
+          <div className="mt-2 flex items-center gap-1.5 bg-primary/10 border border-primary/30 rounded-full px-3 py-1 w-fit">
+            <Trophy className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-bold text-primary">🏆 Desafio completado!</span>
           </div>
         )}
 

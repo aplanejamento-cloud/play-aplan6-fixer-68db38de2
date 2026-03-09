@@ -115,8 +115,8 @@ export function useCreatePost() {
   const { user, profile } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ content, imageUrl, videoUrl, musicUrl, additionalImages }: {
-      content: string; imageUrl?: string; videoUrl?: string; musicUrl?: string; additionalImages?: string[];
+    mutationFn: async ({ content, imageUrl, videoUrl, musicUrl, additionalImages, categoria }: {
+      content: string; imageUrl?: string; videoUrl?: string; musicUrl?: string; additionalImages?: string[]; categoria?: string;
     }) => {
       if (!user) throw new Error("Usuário não autenticado");
 
@@ -141,6 +141,7 @@ export function useCreatePost() {
           image_url: imageUrl || null,
           video_url: videoUrl || null,
           music_url: musicUrl || null,
+          ...(categoria ? { categoria } : {}),
         } as any)
         .select()
         .single();
