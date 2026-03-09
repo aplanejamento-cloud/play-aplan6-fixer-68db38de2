@@ -1,8 +1,10 @@
+import { forwardRef } from "react";
+
 interface PromoTextProps {
   html: string;
 }
 
-const PromoText = ({ html }: PromoTextProps) => {
+const PromoText = forwardRef<HTMLDivElement, PromoTextProps>(({ html }, ref) => {
   // Preserve \n\n as paragraph breaks
   const processedHtml = html
     .replace(/\n\n/g, '</p><p>')
