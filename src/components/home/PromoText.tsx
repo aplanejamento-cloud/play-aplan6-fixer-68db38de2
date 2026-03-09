@@ -13,10 +13,13 @@ const PromoText = forwardRef<HTMLDivElement, PromoTextProps>(({ html }, ref) => 
 
   return (
     <div
+      ref={ref}
       className="prose prose-invert max-w-none text-center [&_p]:text-foreground [&_strong]:text-primary [&_p]:mb-3"
       dangerouslySetInnerHTML={{ __html: wrappedHtml }}
     />
   );
-};
+});
+
+PromoText.displayName = "PromoText";
 
 export default PromoText;

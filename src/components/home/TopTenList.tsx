@@ -86,6 +86,8 @@ const TopTenList = forwardRef<HTMLDivElement, TopTenListProps>(
       </div>
     </div>
   );
-};
+});
+
+TopTenList.displayName = "TopTenList";
 
 export default TopTenList;

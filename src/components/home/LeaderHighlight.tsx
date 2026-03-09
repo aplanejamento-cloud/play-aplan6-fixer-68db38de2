@@ -60,6 +60,8 @@ const LeaderHighlight = forwardRef<HTMLDivElement, LeaderHighlightProps>(
       </span>
     </div>
   );
-};
+});
+
+LeaderHighlight.displayName = "LeaderHighlight";
 
 export default LeaderHighlight;
