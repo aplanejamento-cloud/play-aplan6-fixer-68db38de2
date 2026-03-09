@@ -29,10 +29,11 @@ const getMedalColor = (position: number) => {
   }
 };
 
-const TopTenList = ({ players }: TopTenListProps) => {
-  const navigate = useNavigate();
-  return (
-    <div className="space-y-4">
+const TopTenList = forwardRef<HTMLDivElement, TopTenListProps>(
+  ({ players }, ref) => {
+    const navigate = useNavigate();
+    return (
+      <div ref={ref} className="space-y-4">
       <div className="flex items-center gap-2 justify-center mb-6">
         <Medal className="w-5 h-5 md:w-6 md:h-6 text-primary" />
         <h3 className="font-cinzel text-lg md:text-xl lg:text-2xl font-bold text-foreground">
