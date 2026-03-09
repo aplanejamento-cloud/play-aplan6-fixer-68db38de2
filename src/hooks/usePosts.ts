@@ -141,6 +141,7 @@ export function useCreatePost() {
           image_url: imageUrl || null,
           video_url: videoUrl || null,
           music_url: musicUrl || null,
+          ...(categoria ? { categoria } : {}),
         } as any)
         .select()
         .single();
