@@ -24,6 +24,7 @@ export interface Post {
   tema_id?: string | null;
   coroinha?: boolean | null;
   raio?: boolean | null;
+  categoria?: string | null;
 }
 
 export interface PostInteraction {
