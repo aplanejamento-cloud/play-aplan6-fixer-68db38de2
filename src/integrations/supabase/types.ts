@@ -746,6 +746,7 @@ export type Database = {
           coroinha: boolean | null
           created_at: string | null
           deletado: boolean | null
+          denuncia_categoria: string | null
           denuncias_improprio: number | null
           dislikes_tema: number | null
           expires_at: string | null
@@ -768,6 +769,7 @@ export type Database = {
           coroinha?: boolean | null
           created_at?: string | null
           deletado?: boolean | null
+          denuncia_categoria?: string | null
           denuncias_improprio?: number | null
           dislikes_tema?: number | null
           expires_at?: string | null
@@ -790,6 +792,7 @@ export type Database = {
           coroinha?: boolean | null
           created_at?: string | null
           deletado?: boolean | null
+          denuncia_categoria?: string | null
           denuncias_improprio?: number | null
           dislikes_tema?: number | null
           expires_at?: string | null
