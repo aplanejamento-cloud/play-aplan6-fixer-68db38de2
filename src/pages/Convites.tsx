@@ -4,7 +4,7 @@ import { useReferrals } from "@/hooks/useReferrals";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Star, Copy, QrCode, Mail, Home } from "lucide-react";
+import { Star, Home, Clock, CheckCircle2, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import { useQuery } from "@tanstack/react-query";
@@ -39,7 +39,7 @@ const NETWORKS = [
 
 const Convites = () => {
   const { user, profile } = useAuth();
-  const { referrals, claimNetwork, totalLikesEarned, networksUsed } = useReferrals();
+  const { shares, createShare, totalLikesEarned, networksUsed, verifiedShares, pendingShares, totalClicks } = useReferrals();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loadingNetwork, setLoadingNetwork] = useState<string | null>(null);
@@ -60,32 +60,28 @@ const Convites = () => {
 
   const hasPosted = postsCount >= 1;
 
-  const PROD_URL = "https://playlike.lovable.app";
-  const referralLink = `${PROD_URL}/?ref=${user?.id?.slice(0, 8)}`;
+  const buildShareUrl = (trackingUrl: string, networkId: string) => {
+    const text = `Você não vai acreditar, lançaram uma Rede Social dos Famosos chamada Playlike, onde as pessoas publicam fotos e vídeos em troca de likes e estes likes podem ser trocados por prêmios cadastrados na página.\n\nE ainda vão eleger o melhor influenciador do Brasil.\n\nEu já me cadastrei e estou esperando a Rede Iniciar.\n\nSó pode se cadastrar agora quem recebe convite, porque o jogo ainda não iniciou e a rede está fechada para convidados.\n\nTe mandei o link abaixo para você conseguir se cadastrar também e aguardar o jogo começar\n\n🔥 Convide Playlike app! Cadastre-se grátis: ${trackingUrl}`;
+    const encodedText = encodeURIComponent(text);
+    const encodedUrl = encodeURIComponent(trackingUrl);
+    const shortText = encodeURIComponent(`🔥 Convide Playlike app! Cadastre-se grátis: ${trackingUrl}`);
 
-  const getShareText = () =>
-    `Você não vai acreditar, lançaram uma Rede Social dos Famosos chamada Playlike, onde as pessoas publicam fotos e vídeos em troca de likes e estes likes podem ser trocados por prêmios cadastrados na página.\n\nE ainda vão eleger o melhor influenciador do Brasil.\n\nEu já me cadastrei e estou esperando a Rede Iniciar.\n\nSó pode se cadastrar agora quem recebe convite, porque o jogo ainda não iniciou e a rede está fechada para convidados.\n\nTe mandei o link abaixo para você conseguir se cadastrar também e aguardar o jogo começar\n\n🔥 Convide Playlike app! Cadastre-se grátis: ${referralLink}`;
-
-  const openShareUrl = (network: string) => {
-    const text = encodeURIComponent(getShareText());
-    const url = encodeURIComponent(referralLink);
-    const shortText = encodeURIComponent(`🔥 Convide Playlike app! Cadastre-se grátis: ${referralLink}`);
     const urls: Record<string, string> = {
-      whatsapp: `https://wa.me/?text=${text}`,
-      "whatsapp-status": `https://wa.me/?text=${text}`,
-      telegram: `https://t.me/share/url?url=${url}&text=${text}`,
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`,
+      whatsapp: `https://wa.me/?text=${encodedText}`,
+      "whatsapp-status": `https://wa.me/?text=${encodedText}`,
+      telegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`,
       instagram: `https://www.instagram.com/`,
       twitter: `https://twitter.com/intent/tweet?text=${shortText}`,
       threads: `https://www.threads.net/intent/post?text=${shortText}`,
       bluesky: `https://bsky.app/intent/compose?text=${shortText}`,
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
-      reddit: `https://reddit.com/submit?url=${url}&title=${encodeURIComponent("Convide Playlike app!")}`,
-      pinterest: `https://pinterest.com/pin/create/button/?url=${url}&description=${shortText}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
+      reddit: `https://reddit.com/submit?url=${encodedUrl}&title=${encodeURIComponent("Convide Playlike app!")}`,
+      pinterest: `https://pinterest.com/pin/create/button/?url=${encodedUrl}&description=${shortText}`,
       discord: `https://discord.com/`,
-      messenger: `https://www.facebook.com/dialog/send?link=${url}&app_id=&redirect_uri=${url}`,
-      email: `mailto:?subject=${encodeURIComponent("Convite PlayLike!")}&body=${text}`,
-      sms: `sms:?body=${text}`,
+      messenger: `https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=&redirect_uri=${encodedUrl}`,
+      email: `mailto:?subject=${encodeURIComponent("Convite PlayLike!")}&body=${encodedText}`,
+      sms: `sms:?body=${encodedText}`,
       tiktok: `https://www.tiktok.com/`,
       kwai: `https://www.kwai.com/`,
       youtube: `https://www.youtube.com/`,
@@ -94,9 +90,7 @@ const Convites = () => {
       github: `https://github.com/`,
       signal: `https://signal.me/`,
     };
-    if (urls[network]) {
-      window.open(urls[network], "_blank");
-    }
+    return urls[networkId] || null;
   };
 
   const handleNetworkClick = async (networkId: string) => {
@@ -106,28 +100,43 @@ const Convites = () => {
     }
     setLoadingNetwork(networkId);
 
-    if (networkId === "copiar-link" || networkId === "qrcode") {
-      await navigator.clipboard.writeText(referralLink);
-      toast({ title: "Link copiado!", description: referralLink });
-    }
+    try {
+      // Create a tracked share with unique code
+      const result = await createShare(networkId);
+      if (!result) {
+        toast({ title: "Erro ao gerar convite", variant: "destructive" });
+        setLoadingNetwork(null);
+        return;
+      }
 
-    openShareUrl(networkId);
+      const { trackingUrl } = result;
 
-    const { success, likes } = await claimNetwork(networkId);
-    if (success) {
-      toast({
-        title: `+${likes.toLocaleString("pt-BR")} likes! 🎉`,
-        description:
-          likes === 1000
-            ? `Primeira vez via ${NETWORKS.find((n) => n.id === networkId)?.name}! Parabéns!`
-            : `+10 likes por compartilhar via ${NETWORKS.find((n) => n.id === networkId)?.name}`,
-      });
+      if (networkId === "copiar-link" || networkId === "qrcode") {
+        await navigator.clipboard.writeText(trackingUrl);
+        toast({ title: "Link rastreado copiado! 📋", description: "Likes serão creditados quando alguém clicar." });
+      } else {
+        const shareUrl = buildShareUrl(trackingUrl, networkId);
+        if (shareUrl) {
+          window.open(shareUrl, "_blank");
+        }
+        toast({
+          title: `📤 Convite enviado via ${NETWORKS.find((n) => n.id === networkId)?.name}!`,
+          description: "⏳ Likes serão creditados quando alguém clicar no seu link.",
+        });
+      }
+    } catch (e) {
+      toast({ title: "Erro ao compartilhar", variant: "destructive" });
     }
 
     setLoadingNetwork(null);
   };
 
-  const isUsed = (networkId: string) => referrals.some((r) => r.network === networkId);
+  const getNetworkStatus = (networkId: string) => {
+    const networkShares = shares.filter((s) => s.network === networkId);
+    if (networkShares.length === 0) return "new";
+    if (networkShares.some((s) => s.likes_awarded)) return "verified";
+    return "pending";
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -141,6 +150,9 @@ const Convites = () => {
           <p className="text-muted-foreground text-sm md:text-base">
             Convide amigos de cada rede → <span className="text-primary font-bold">1.000 likes/rede</span> (1ª vez)
           </p>
+          <p className="text-xs text-muted-foreground">
+            ⚡ Likes são creditados <span className="text-primary font-semibold">quando alguém clicar</span> no seu link
+          </p>
           {!hasPosted && (
             <p className="text-xs text-destructive font-bold">📝 Publique pelo menos 1 post no Feed antes de convidar!</p>
           )}
@@ -150,18 +162,23 @@ const Convites = () => {
         <Card className="bg-card/80 border-border">
           <CardContent className="py-4 flex items-center justify-around text-center">
             <div>
-              <p className="text-2xl font-bold text-primary">{networksUsed}</p>
-              <p className="text-xs text-muted-foreground">Redes usadas</p>
+              <p className="text-2xl font-bold text-primary">{verifiedShares}</p>
+              <p className="text-xs text-muted-foreground">Verificados</p>
+            </div>
+            <div className="w-px h-10 bg-border" />
+            <div>
+              <p className="text-2xl font-bold text-muted-foreground">{pendingShares}</p>
+              <p className="text-xs text-muted-foreground">Pendentes</p>
+            </div>
+            <div className="w-px h-10 bg-border" />
+            <div>
+              <p className="text-2xl font-bold text-primary">{totalClicks}</p>
+              <p className="text-xs text-muted-foreground">Cliques</p>
             </div>
             <div className="w-px h-10 bg-border" />
             <div>
               <p className="text-2xl font-bold text-primary">{totalLikesEarned.toLocaleString("pt-BR")}</p>
               <p className="text-xs text-muted-foreground">Likes ganhos</p>
-            </div>
-            <div className="w-px h-10 bg-border" />
-            <div>
-              <p className="text-2xl font-bold text-foreground">{(31000 - totalLikesEarned).toLocaleString("pt-BR")}</p>
-              <p className="text-xs text-muted-foreground">Likes restantes</p>
             </div>
           </CardContent>
         </Card>
@@ -169,18 +186,38 @@ const Convites = () => {
         {/* Networks Grid */}
         <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
           {NETWORKS.map((network) => {
-            const used = isUsed(network.id);
+            const status = getNetworkStatus(network.id);
             return (
-              <button key={network.id} onClick={() => handleNetworkClick(network.id)} disabled={loadingNetwork === network.id}
-                className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all active:scale-95 ${
-                  used ? "border-primary/50 bg-primary/10" : "border-border bg-card hover:border-primary/30 hover:bg-card/80"
-                }`}>
+              <button
+                key={network.id}
+                onClick={() => handleNetworkClick(network.id)}
+                disabled={loadingNetwork === network.id}
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all active:scale-95 relative ${
+                  status === "verified"
+                    ? "border-primary/50 bg-primary/10"
+                    : status === "pending"
+                    ? "border-yellow-500/50 bg-yellow-500/10"
+                    : "border-border bg-card hover:border-primary/30 hover:bg-card/80"
+                }`}
+              >
                 <span className="text-2xl md:text-3xl">{network.icon}</span>
                 <span className="text-[10px] md:text-xs text-foreground leading-tight text-center">{network.name}</span>
-                {used && <span className="text-[9px] text-primary font-bold">✓</span>}
+                {status === "verified" && (
+                  <CheckCircle2 className="w-3 h-3 text-primary absolute top-1 right-1" />
+                )}
+                {status === "pending" && (
+                  <Clock className="w-3 h-3 text-yellow-500 absolute top-1 right-1" />
+                )}
               </button>
             );
           })}
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-primary" /> Verificado</span>
+          <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-yellow-500" /> Aguardando clique</span>
+          <span className="flex items-center gap-1"><ExternalLink className="w-3 h-3" /> Novo</span>
         </div>
 
         {networksUsed >= 10 && (
