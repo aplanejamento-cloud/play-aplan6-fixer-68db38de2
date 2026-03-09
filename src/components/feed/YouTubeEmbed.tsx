@@ -78,31 +78,39 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
 
   if (!videoId) return null;
 
-  const iframeSrc = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&modestbranding=1&rel=0&playsinline=1&origin=${window.location.origin}`;
+  const iframeSrc = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&modestbranding=1&rel=0&playsinline=1&controls=0&showinfo=0&iv_load_policy=3&origin=${window.location.origin}`;
+  const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
 
   return (
     <div ref={containerRef} className="relative w-full aspect-video rounded-lg overflow-hidden bg-black">
-      <iframe
-        ref={iframeRef}
-        src={iframeSrc}
-        title="YouTube video"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen={false}
-        className="w-full h-full border-0 pointer-events-none"
-        loading="lazy"
-      />
+      {playing ? (
+        <iframe
+          ref={iframeRef}
+          src={`${iframeSrc}&autoplay=1`}
+          title="YouTube video"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen={false}
+          className="w-full h-full border-0 pointer-events-none"
+        />
+      ) : (
+        <img
+          src={thumbnailUrl}
+          alt="YouTube video thumbnail"
+          className="w-full h-full object-cover"
+        />
+      )}
       {/* Overlay blocks all clicks to YouTube */}
       <div
         onClick={handleToggle}
         className="absolute inset-0 cursor-pointer flex items-center justify-center z-10"
       >
         {!playing && (
-          <div className="bg-black/60 rounded-full p-4 text-white hover:bg-black/80 transition-colors">
-            <Play className="w-8 h-8" />
+          <div className="bg-black/70 rounded-full p-5 text-white hover:bg-black/90 transition-colors shadow-lg">
+            <Play className="w-10 h-10 fill-white" />
           </div>
         )}
         {playing && (
-          <div className="bg-black/0 hover:bg-black/30 transition-colors absolute inset-0 flex items-center justify-center">
+          <div className="bg-transparent hover:bg-black/30 transition-colors absolute inset-0 flex items-center justify-center">
             <div className="opacity-0 hover:opacity-100 transition-opacity bg-black/60 rounded-full p-4 text-white">
               <Pause className="w-8 h-8" />
             </div>
