@@ -168,6 +168,16 @@ const DesafiosJuiz = () => {
                   {d.video_url && (
                     <video src={d.video_url} controls className="w-full rounded-lg max-h-64 object-cover" />
                   )}
+                  {/* Fiz isso! button for jogadores */}
+                  {user && profile?.user_type !== "juiz" && (
+                    <Button
+                      onClick={() => setProofDesafio(d)}
+                      className="w-full bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20"
+                      variant="outline"
+                    >
+                      <Trophy className="w-4 h-4 mr-2" /> Fiz isso! 💪
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ))
