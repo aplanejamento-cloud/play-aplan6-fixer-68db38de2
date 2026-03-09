@@ -183,7 +183,16 @@ const DesafiosJuiz = () => {
             ))
           )}
         </div>
-      </main>
+      {/* Challenge Proof Modal */}
+      {proofDesafio && (
+        <ChallengeProofModal
+          open={!!proofDesafio}
+          onOpenChange={(open) => { if (!open) setProofDesafio(null); }}
+          desafioTexto={proofDesafio.texto || "Desafio"}
+          desafioId={proofDesafio.id}
+        />
+      )}
+    </main>
     </div>
   );
 };
