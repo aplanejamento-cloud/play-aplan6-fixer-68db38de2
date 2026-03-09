@@ -978,6 +978,71 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_clicks: {
+        Row: {
+          clicked_at: string
+          id: string
+          ip_hash: string | null
+          share_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          clicked_at?: string
+          id?: string
+          ip_hash?: string | null
+          share_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          clicked_at?: string
+          id?: string
+          ip_hash?: string | null
+          share_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_clicks_share_id_fkey"
+            columns: ["share_id"]
+            isOneToOne: false
+            referencedRelation: "referral_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_shares: {
+        Row: {
+          clicks_count: number | null
+          id: string
+          likes_awarded: boolean | null
+          network: string
+          share_code: string
+          shared_at: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          clicks_count?: number | null
+          id?: string
+          likes_awarded?: boolean | null
+          network: string
+          share_code: string
+          shared_at?: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          clicks_count?: number | null
+          id?: string
+          likes_awarded?: boolean | null
+          network?: string
+          share_code?: string
+          shared_at?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       regras_content: {
         Row: {
           created_at: string | null
