@@ -21,6 +21,7 @@ const DesafiosJuiz = () => {
   const [texto, setTexto] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [proofDesafio, setProofDesafio] = useState<Desafio | null>(null);
 
   const isJuiz = profile?.user_type === "juiz";
 
