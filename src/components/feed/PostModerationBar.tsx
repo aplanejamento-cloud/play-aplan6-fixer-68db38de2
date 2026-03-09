@@ -39,18 +39,19 @@ const PostModerationBar = ({ postId, dislikes, denuncias, temaTitle, temaFator }
 
   // Check if user already voted
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
     supabase
       .from("post_moderation_votes" as any)
       .select("vote_type")
       .eq("post_id", postId)
       .eq("user_id", user.id)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) { console.error("moderation check error:", error); return; }
         const votes = (data || []) as any[];
         setHasDisliked(votes.some((v: any) => v.vote_type === "dislike"));
         setHasReported(votes.some((v: any) => v.vote_type === "report"));
       });
-  }, [user, postId]);
+  }, [user?.id, postId]);
 
   const handleDislike = async () => {
     if (!user || hasDisliked || loading) return;
