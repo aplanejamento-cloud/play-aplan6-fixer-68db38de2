@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { Heart, Crown, Star } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -7,7 +8,8 @@ interface LeaderHighlightProps {
   likes: number;
 }
 
-const LeaderHighlight = ({ name, avatarUrl, likes }: LeaderHighlightProps) => {
+const LeaderHighlight = forwardRef<HTMLDivElement, LeaderHighlightProps>(
+  ({ name, avatarUrl, likes }, ref) => {
   const formattedLikes = likes.toLocaleString("pt-BR");
 
   return (
