@@ -154,7 +154,7 @@ export function useDuels() {
 
       await supabase
         .from("profiles")
-        .update({ total_likes: challengerProfile.total_likes + 10 })
+        .update({ total_likes: (challengerProfile.total_likes ?? 0) + 10 })
         .eq("user_id", duel.challenger_id);
     }
 
