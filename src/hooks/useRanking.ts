@@ -7,7 +7,7 @@ interface RankedPlayer {
   id: string;
   name: string;
   avatar_url: string | null;
-  total_likes: number;
+  total_likes: number | null;
   user_id: string;
 }
 

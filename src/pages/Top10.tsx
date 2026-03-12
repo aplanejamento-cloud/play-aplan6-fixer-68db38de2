@@ -250,7 +250,7 @@ const Top10 = () => {
                 </div>
                 <div className="flex items-center gap-1 text-primary text-sm">
                   <Heart className="w-3.5 h-3.5 fill-primary" />
-                  <span className="font-bold">{p.total_likes.toLocaleString("pt-BR")}</span>
+                  <span className="font-bold">{(p.total_likes ?? 0).toLocaleString("pt-BR")}</span>
                 </div>
               </button>
             ))}

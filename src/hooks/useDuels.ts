@@ -226,7 +226,7 @@ export function useDuels() {
           .eq("user_id", loserId!);
         await supabase
           .from("profiles")
-          .update({ total_likes: winnerProfile.total_likes + stakeAmount })
+          .update({ total_likes: (winnerProfile.total_likes ?? 0) + stakeAmount })
           .eq("user_id", winnerId!);
       }
     }

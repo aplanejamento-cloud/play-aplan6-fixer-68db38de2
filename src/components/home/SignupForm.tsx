@@ -43,7 +43,7 @@ const signupSchema = z.object({
     .regex(/^[0-9]{10,11}$/, "WhatsApp deve ter 10 ou 11 dígitos numéricos"),
   email: z.string().email("Email inválido").max(255, "Email muito longo"),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
-  userType: z.enum(["jogador", "juiz"], { required_error: "Selecione o tipo de usuário" }),
+  userType: z.enum(["jogador", "juiz"] as const, { required_error: "Selecione o tipo de usuário" }),
 });
 
 type SignupFormData = z.infer<typeof signupSchema>;

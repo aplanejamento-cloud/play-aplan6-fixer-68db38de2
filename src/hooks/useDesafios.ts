@@ -164,7 +164,7 @@ export function useDesafios() {
     if (juizProfile) {
       await supabase
         .from("profiles")
-        .update({ total_likes: juizProfile.total_likes + desafio.likes_pago })
+        .update({ total_likes: (juizProfile.total_likes ?? 0) + desafio.likes_pago })
         .eq("user_id", desafio.juiz_id);
     }
 

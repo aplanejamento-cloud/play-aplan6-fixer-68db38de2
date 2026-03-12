@@ -153,7 +153,7 @@ export function useAprovarDoacao() {
       if (pErr) throw pErr;
       const { data: profile } = await supabase.from("profiles").select("total_likes").eq("user_id", doacao.usuario_id).single();
       if (profile) {
-        await supabase.from("profiles").update({ total_likes: profile.total_likes + doacao.likes_recebidos }).eq("user_id", doacao.usuario_id);
+        await supabase.from("profiles").update({ total_likes: (profile.total_likes ?? 0) + (doacao.likes_recebidos ?? 0) }).eq("user_id", doacao.usuario_id);
       }
       await supabase.from("doacoes_premios").update({ aprovado: true }).eq("id", doacao.id);
     },

@@ -319,7 +319,7 @@ const Premios = () => {
       await supabase.from("resgates").delete().eq("id", resgateId);
       const { data: prof } = await supabase.from("profiles").select("total_likes").eq("user_id", user!.id).single();
       if (prof) {
-        await supabase.from("profiles").update({ total_likes: prof.total_likes + resgate.likes_gastos }).eq("user_id", user!.id);
+        await supabase.from("profiles").update({ total_likes: (prof.total_likes ?? 0) + (resgate.likes_gastos ?? 0) }).eq("user_id", user!.id);
       }
       qc.invalidateQueries({ queryKey: ["meus_resgates"] });
       qc.invalidateQueries({ queryKey: ["profile_likes"] });
