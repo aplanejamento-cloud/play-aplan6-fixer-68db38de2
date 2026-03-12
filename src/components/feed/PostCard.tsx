@@ -40,6 +40,7 @@ const PostCard = ({ post }: PostCardProps) => {
   const navigate = useNavigate();
   const [showMimo, setShowMimo] = useState(false);
   const [showChallenge, setShowChallenge] = useState(false);
+  const [showLikers, setShowLikers] = useState(false);
 
   const isFollowing = following.includes(post.user_id);
   const isOwnPost = user?.id === post.user_id;

@@ -91,11 +91,11 @@ export function useReferrals() {
   const networksUsed = [...new Set(shares.filter((s) => s.likes_awarded).map((s) => s.network))].length;
   const totalLikesEarned = shares.reduce((sum, s) => {
     if (!s.likes_awarded) return sum;
-    // First use of network = 1000, subsequent = 10
+    // First use of network = 100, subsequent = 10
     const firstUseOfNetwork = shares.find(
       (other) => other.network === s.network && other.likes_awarded && other.shared_at <= s.shared_at
     );
-    return sum + (firstUseOfNetwork?.id === s.id ? 1000 : 10);
+    return sum + (firstUseOfNetwork?.id === s.id ? 100 : 10);
   }, 0);
 
   return {

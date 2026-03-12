@@ -89,6 +89,30 @@ export function useDuels() {
       return;
     }
 
+    // Max 1 active duel per user
+    const { data: activeDuels } = await supabase
+      .from("duels")
+      .select("id")
+      .or(`challenger_id.eq.${user.id},challenged_id.eq.${user.id}`)
+      .in("status", ["pending", "active"]);
+    
+    if (activeDuels && activeDuels.length > 0) {
+      toast.error("Você já tem um duelo ativo! Finalize antes de iniciar outro.");
+      return;
+    }
+
+    // Also check if target already has active duel
+    const { data: targetDuels } = await supabase
+      .from("duels")
+      .select("id")
+      .or(`challenger_id.eq.${challengedId},challenged_id.eq.${challengedId}`)
+      .in("status", ["pending", "active"]);
+    
+    if (targetDuels && targetDuels.length > 0) {
+      toast.error("Este jogador já está em um duelo ativo!");
+      return;
+    }
+
     const { error } = await supabase.from("duels").insert({
       challenger_id: user.id,
       challenged_id: challengedId,

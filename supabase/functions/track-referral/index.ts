@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
           .eq("likes_awarded", true)
           .single();
 
-        const likesToAward = existingNetworkUse ? 10 : 1000;
+        const likesToAward = existingNetworkUse ? 10 : 100;
 
         // Update profile total_likes
         const { data: profile } = await supabase

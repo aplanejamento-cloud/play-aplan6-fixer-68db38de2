@@ -148,7 +148,7 @@ const Convites = () => {
             Ganhe até 3.100 Likes GRÁTIS!
           </h1>
           <p className="text-muted-foreground text-sm md:text-base">
-            Convide amigos de cada rede → <span className="text-primary font-bold">1.000 likes/rede</span> (1ª vez)
+            Convide amigos de cada rede → <span className="text-primary font-bold">100 likes/rede</span> (1ª vez)
           </p>
           <p className="text-xs text-muted-foreground">
             ⚡ Likes são creditados <span className="text-primary font-semibold">quando alguém clicar</span> no seu link
