@@ -9,7 +9,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useRemixCount } from "@/hooks/useRemix";
 import { useDuels } from "@/hooks/useDuels";
 import { Button } from "@/components/ui/button";
-import { Heart, Flame, Bomb, UserPlus, UserMinus, Trash2, Crown, User, Music, Gift, Repeat2, Sparkles, Swords, Zap, Share2, Download, Trophy } from "lucide-react";
+import { Heart, Flame, Bomb, UserPlus, UserMinus, Trash2, Crown, User, Music, Gift, Repeat2, Sparkles, Swords, Zap, Share2, Download, Trophy, Gavel } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
