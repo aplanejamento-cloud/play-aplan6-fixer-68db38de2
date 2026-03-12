@@ -29,7 +29,7 @@ import { lovable } from "@/integrations/lovable/index";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").max(100, "Nome muito longo"),
-  sex: z.enum(["M", "F", "O"], { required_error: "Selecione o sexo" }),
+  sex: z.enum(["M", "F", "O"] as const, { required_error: "Selecione o sexo" }),
   birthDate: z.string().min(1, "Data de nascimento é obrigatória").refine((val) => {
     const birth = new Date(val);
     const today = new Date();
