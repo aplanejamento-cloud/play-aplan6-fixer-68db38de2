@@ -1,1 +1,0 @@
-UPDATE profiles SET total_likes = -3 WHERE name = 'Jogador Teste 2';
