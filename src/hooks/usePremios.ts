@@ -106,7 +106,7 @@ export function useResgatarPremio() {
       if (!profile || (profile.total_likes ?? 0) < likesCusto) throw new Error("Saldo insuficiente");
 
       const { data: premio } = await supabase.from("premios").select("estoque").eq("id", premioId).single();
-      if (!premio || premio.estoque < 1) throw new Error("Sem estoque");
+      if (!premio || (premio.estoque ?? 0) < 1) throw new Error("Sem estoque");
 
       const { error: rErr } = await supabase.from("resgates").insert({
         usuario_id: userId,
