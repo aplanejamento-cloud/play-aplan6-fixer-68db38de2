@@ -145,10 +145,10 @@ const Convites = () => {
         <div className="text-center space-y-2">
           <h1 className="font-cinzel text-2xl md:text-3xl text-primary glow-gold flex items-center justify-center gap-2">
             <Star className="w-7 h-7" />
-            Ganhe até 31.000 Likes GRÁTIS!
+            Ganhe até 3.100 Likes GRÁTIS!
           </h1>
           <p className="text-muted-foreground text-sm md:text-base">
-            Convide amigos de cada rede → <span className="text-primary font-bold">1.000 likes/rede</span> (1ª vez)
+            Convide amigos de cada rede → <span className="text-primary font-bold">100 likes/rede</span> (1ª vez)
           </p>
           <p className="text-xs text-muted-foreground">
             ⚡ Likes são creditados <span className="text-primary font-semibold">quando alguém clicar</span> no seu link

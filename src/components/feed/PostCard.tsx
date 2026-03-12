@@ -8,8 +8,10 @@ import { useDeletePost } from "@/hooks/usePosts";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useRemixCount } from "@/hooks/useRemix";
 import { useDuels } from "@/hooks/useDuels";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Heart, Flame, Bomb, UserPlus, UserMinus, Trash2, Crown, User, Music, Gift, Repeat2, Sparkles, Swords, Zap, Share2, Download, Trophy } from "lucide-react";
+import { Heart, Flame, Bomb, UserPlus, UserMinus, Trash2, Crown, User, Music, Gift, Repeat2, Sparkles, Swords, Zap, Share2, Download, Trophy, Gavel, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -21,6 +23,8 @@ import VideoPost from "./VideoPost";
 import PostModerationBar from "./PostModerationBar";
 import YouTubeEmbed, { extractYouTubeId } from "./YouTubeEmbed";
 import ChallengeDialog from "./ChallengeDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface PostCardProps {
   post: Post;
@@ -40,6 +44,7 @@ const PostCard = ({ post }: PostCardProps) => {
   const navigate = useNavigate();
   const [showMimo, setShowMimo] = useState(false);
   const [showChallenge, setShowChallenge] = useState(false);
+  const [showLikers, setShowLikers] = useState(false);
 
   const isFollowing = following.includes(post.user_id);
   const isOwnPost = user?.id === post.user_id;
@@ -265,13 +270,16 @@ const PostCard = ({ post }: PostCardProps) => {
 
       {/* Footer */}
       <div className="p-3 space-y-3">
-        <div className="flex items-center gap-2 text-sm">
+        <button
+          onClick={() => setShowLikers(true)}
+          className="flex items-center gap-2 text-sm hover:opacity-80 transition-opacity cursor-pointer"
+        >
           <Heart className={cn("w-4 h-4", post.likes_count >= 0 ? "text-primary fill-primary" : "text-destructive")} />
           <span className={cn("font-bold", post.likes_count >= 10 ? "text-primary glow-gold" : post.likes_count < 0 ? "text-destructive" : "text-foreground")}>
             {post.likes_count.toLocaleString("pt-BR")}
           </span>
-          <span className="text-muted-foreground">likes</span>
-        </div>
+          <span className="text-muted-foreground underline">likes</span>
+        </button>
 
         <footer className="flex flex-wrap gap-2 pt-2 border-t border-border">
           <InteractionButton type="like" icon={Heart} label="Curtir" activeClass="bg-primary/20 text-primary" value="+1" />
@@ -288,8 +296,8 @@ const PostCard = ({ post }: PostCardProps) => {
             </button>
           )}
           
-          {/* Challenge button - only for other jogadores */}
-          {user && !isOwnPost && isTargetJogador && profile?.user_type === "jogador" && (
+          {/* Challenge button - only jogadores can challenge other jogadores (juiz blocked) */}
+          {user && !isOwnPost && isTargetJogador && profile?.user_type === "jogador" && !post.author?.eliminated_at && (
             <button
               onClick={() => setShowChallenge(true)}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all"
@@ -322,6 +330,28 @@ const PostCard = ({ post }: PostCardProps) => {
               <span className="hidden sm:inline">Mimo</span>
             </button>
           )}
+          
+          {/* Desafios link */}
+          {user && (
+            <button
+              onClick={() => navigate("/desafios-juiz")}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-muted/50 text-muted-foreground hover:bg-muted transition-all"
+            >
+              <Gavel className="w-4 h-4" />
+              <span className="hidden sm:inline">Desafios</span>
+            </button>
+          )}
+          
+          {/* Fiz isso! button for desafio posts - only non-juiz users */}
+          {isDesafioPost && user && !isOwnPost && profile?.user_type !== "juiz" && (
+            <button
+              onClick={() => navigate(`/desafios-juiz`)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-primary/20 text-primary hover:bg-primary/30 transition-all"
+            >
+              <Trophy className="w-4 h-4" />
+              <span>Fiz isso!</span>
+            </button>
+          )}
         </footer>
 
         <PostModerationBar
@@ -352,7 +382,70 @@ const PostCard = ({ post }: PostCardProps) => {
           onConfirm={handleChallengeConfirm}
         />
       )}
+
+      {/* Likers Dialog */}
+      <LikersDialog open={showLikers} onOpenChange={setShowLikers} postId={post.id} />
     </article>
+  );
+};
+
+/* Likers Dialog - shows who liked the post */
+const LikersDialog = ({ open, onOpenChange, postId }: { open: boolean; onOpenChange: (o: boolean) => void; postId: string }) => {
+  const navigate = useNavigate();
+  const { data: likers = [], isLoading } = useQuery({
+    queryKey: ["post-likers", postId],
+    enabled: open,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("post_interactions")
+        .select("interaction_type, user_id")
+        .eq("post_id", postId)
+        .order("created_at", { ascending: false });
+      if (!data || data.length === 0) return [];
+      const userIds = [...new Set(data.map(d => d.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, name, avatar_url")
+        .in("user_id", userIds);
+      return data.map(d => ({
+        ...d,
+        profile: profiles?.find(p => p.user_id === d.user_id),
+      }));
+    },
+  });
+
+  const emojiMap: Record<string, string> = { like: "❤️", love: "🔥", bomb: "💣" };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm max-h-[70vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-primary font-cinzel">Quem interagiu</DialogTitle>
+        </DialogHeader>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground text-center py-4">Carregando...</p>
+        ) : likers.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">Nenhuma interação ainda.</p>
+        ) : (
+          <div className="space-y-2">
+            {likers.map((l, i) => (
+              <button
+                key={i}
+                onClick={() => { onOpenChange(false); navigate(`/profile/${l.user_id}`); }}
+                className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
+              >
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={l.profile?.avatar_url || ""} />
+                  <AvatarFallback>{l.profile?.name?.charAt(0) || "?"}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium text-foreground flex-1">{l.profile?.name || "Anônimo"}</span>
+                <span className="text-lg">{emojiMap[l.interaction_type] || "❤️"}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
 

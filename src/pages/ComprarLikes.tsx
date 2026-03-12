@@ -13,7 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const PACOTES_TURBO = [
   { tipo: "turbo", likes: 0, valor: 19.9, label: "🔥 Turbo Likes x10", desc: "7 dias — cada like vale 10!", best: true, icon: Zap },
-  { tipo: "turbo_bomba", likes: 0, valor: 29.9, label: "💣 Turbo Bombas x10", desc: "7 dias — juízes: bombas x10", icon: Sparkles },
+  { tipo: "turbo_bomba", likes: 0, valor: 29.9, label: "💣 Turbo Bombas x10", desc: "7 dias — todos: bombas x10", icon: Sparkles },
   { tipo: "premium", likes: 0, valor: 9.9, label: "🏆 Premium 30 dias", desc: "Badge exclusivo + destaque no feed", icon: Crown },
 ];
 

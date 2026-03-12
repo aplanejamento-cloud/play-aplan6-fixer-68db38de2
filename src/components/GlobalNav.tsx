@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useRef } from "react";
-import { Home, User, Flame, Swords, Trophy, Gift, MessageSquare, BookOpen, HelpCircle, DollarSign, Download, Gavel, Paintbrush, Crown, BarChart3, Bot, Star, Skull, LifeBuoy, Sparkles, FileText, Ticket, PieChart } from "lucide-react";
+import { Home, User, Flame, Swords, Trophy, Gift, MessageSquare, BookOpen, HelpCircle, DollarSign, Download, Gavel, Paintbrush, Crown, BarChart3, Bot, Star, ThumbsDown, Sparkles, FileText, Ticket, PieChart } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 const loggedOutItems = [
   { path: "/", label: "🏠 Home", icon: Home },
   { path: "/patrocinador", label: "👑 Patrocínio", icon: Crown },
-  { path: "/eliminados", label: "⚰️ Eliminados", icon: Skull },
+  { path: "/eliminados", label: "👎 Eliminados", icon: ThumbsDown },
 ];
 
 const GlobalNav = () => {
@@ -65,11 +65,11 @@ const GlobalNav = () => {
     { path: "/chats", label: "Chats", icon: MessageSquare, requiresGame: true, requiresAuth: true },
     { path: "/regras", label: "Regras", icon: BookOpen, requiresGame: false, requiresAuth: true },
     { path: "/ajuda", label: "Ajuda", icon: HelpCircle, requiresGame: false, requiresAuth: true },
-    { path: "/sos-ajuda", label: "SOS", icon: LifeBuoy, requiresGame: false, requiresAuth: true },
+    
     { path: "/comprar-likes", label: "Loja", icon: DollarSign, requiresGame: true, requiresAuth: true },
     { path: "/downloads", label: "Downloads", icon: Download, requiresGame: false, requiresAuth: true },
     { path: "/ebooks", label: "Ebooks", icon: FileText, requiresGame: false, requiresAuth: true },
-    { path: "/eliminados", label: "Eliminados", icon: Skull, requiresGame: false, requiresAuth: false },
+    { path: "/eliminados", label: "Eliminados", icon: ThumbsDown, requiresGame: false, requiresAuth: false },
     { path: "/stats", label: "Stats", icon: BarChart3, requiresGame: false, requiresAuth: true, requiresAdmin: true },
     { path: "/admin/resgates", label: "Resgates", icon: Ticket, requiresGame: false, requiresAuth: true, requiresAdmin: true },
     { path: "/analytics", label: "Analytics", icon: PieChart, requiresGame: false, requiresAuth: true, requiresAdmin: true },
