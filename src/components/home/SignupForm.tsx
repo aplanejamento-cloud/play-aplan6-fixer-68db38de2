@@ -150,7 +150,7 @@ const SignupForm = () => {
         name: data.name,
         sex: data.sex,
         whatsapp: data.whatsapp,
-        user_type: data.userType,
+        user_type: data.userType as 'jogador' | 'juiz',
         birth_date: data.birthDate,
       });
 
