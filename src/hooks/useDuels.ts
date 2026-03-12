@@ -212,7 +212,7 @@ export function useDuels() {
         // FATALITÉ: winner gets all loser's likes, loser goes to 0
         await supabase
           .from("profiles")
-          .update({ total_likes: winnerProfile.total_likes + loserProfile.total_likes })
+          .update({ total_likes: (winnerProfile.total_likes ?? 0) + (loserProfile.total_likes ?? 0) })
           .eq("user_id", winnerId!);
         await supabase
           .from("profiles")
