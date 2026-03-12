@@ -448,6 +448,5 @@ const LikersDialog = ({ open, onOpenChange, postId }: { open: boolean; onOpenCha
     </Dialog>
   );
 };
-};
 
 export default PostCard;
