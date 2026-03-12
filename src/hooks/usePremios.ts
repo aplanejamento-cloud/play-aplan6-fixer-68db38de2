@@ -118,7 +118,7 @@ export function useResgatarPremio() {
       if (rErr) throw rErr;
 
       // Only deduct likes from user - estoque is decremented when doador verifies senha
-      await supabase.from("profiles").update({ total_likes: profile.total_likes - likesCusto }).eq("user_id", userId);
+      await supabase.from("profiles").update({ total_likes: (profile.total_likes ?? 0) - likesCusto }).eq("user_id", userId);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["premios"] });
