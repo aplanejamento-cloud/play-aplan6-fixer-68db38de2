@@ -222,7 +222,7 @@ export function useDuels() {
         // Normal: transfer hardcoded stake
         await supabase
           .from("profiles")
-          .update({ total_likes: Math.max(0, loserProfile.total_likes - stakeAmount) })
+          .update({ total_likes: Math.max(0, (loserProfile.total_likes ?? 0) - stakeAmount) })
           .eq("user_id", loserId!);
         await supabase
           .from("profiles")
