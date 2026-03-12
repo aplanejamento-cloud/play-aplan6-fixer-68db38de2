@@ -1,5 +1,0 @@
-{
-  "name": "Play Aplan 6",
-  "description": "Plataforma de duelos e entretenimento.",
-  "requestFramePermissions": ["camera", "microphone", "geolocation"]
-}

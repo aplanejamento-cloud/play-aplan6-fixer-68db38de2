@@ -46,7 +46,7 @@ const AdminPixLogs = () => {
   const rejeitados = compras.filter(c => c.status === "rejeitado");
   const totalAprovado = aprovados.reduce((s, c) => s + Number(c.valor), 0);
   const totalHoje = compras
-    .filter(c => c.status === "aprovado" && new Date(c.created_at).toDateString() === new Date().toDateString())
+    .filter(c => c.status === "aprovado" && new Date(c.created_at!).toDateString() === new Date().toDateString())
     .reduce((s, c) => s + Number(c.valor), 0);
 
   return (
@@ -102,7 +102,7 @@ const AdminPixLogs = () => {
                         {c.tipo === "turbo" ? "🔥 Turbo" : c.tipo === "premium" ? "🏆 Premium" : `${c.likes_adquiridos} likes`}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        R${Number(c.valor).toFixed(2)} • {new Date(c.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                        R${Number(c.valor).toFixed(2)} • {new Date(c.created_at!).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
                     <span className={cn(

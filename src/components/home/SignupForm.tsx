@@ -29,7 +29,7 @@ import { lovable } from "@/integrations/lovable/index";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").max(100, "Nome muito longo"),
-  sex: z.enum(["M", "F", "O"], { required_error: "Selecione o sexo" }),
+  sex: z.string().refine((v) => ["M", "F", "O"].includes(v), { message: "Selecione o sexo" }),
   birthDate: z.string().min(1, "Data de nascimento é obrigatória").refine((val) => {
     const birth = new Date(val);
     const today = new Date();
@@ -43,7 +43,7 @@ const signupSchema = z.object({
     .regex(/^[0-9]{10,11}$/, "WhatsApp deve ter 10 ou 11 dígitos numéricos"),
   email: z.string().email("Email inválido").max(255, "Email muito longo"),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
-  userType: z.enum(["jogador", "juiz"], { required_error: "Selecione o tipo de usuário" }),
+  userType: z.string().refine((v) => ["jogador", "juiz"].includes(v), { message: "Selecione o tipo de usuário" }),
 });
 
 type SignupFormData = z.infer<typeof signupSchema>;
@@ -150,7 +150,7 @@ const SignupForm = () => {
         name: data.name,
         sex: data.sex,
         whatsapp: data.whatsapp,
-        user_type: data.userType,
+        user_type: data.userType as 'jogador' | 'juiz',
         birth_date: data.birthDate,
       });
 

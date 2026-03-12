@@ -1,2 +1,0 @@
-INSERT INTO doacoes_premios (usuario_id, midia_url, titulo, descricao, likes_recebidos, aprovado, tipo_prateleira, quantidade, estado, cidade)
-VALUES ('c0f361e0-59f4-4aea-9233-d03dfd92052c', 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400', 'Camiseta 50likes', 'Camiseta exclusiva', 50, false, 2, 1, 'SP', 'São Paulo')

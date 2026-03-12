@@ -92,7 +92,7 @@ const Index = () => {
     id: p.id,
     userId: p.user_id,
     name: p.name,
-    likes: p.total_likes,
+    likes: p.total_likes ?? 0,
     position: i + 1,
     avatarUrl: p.avatar_url || undefined,
   }));
@@ -205,7 +205,7 @@ const Index = () => {
             <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
           ) : leader ? (
             <section className="max-w-md mx-auto bg-card/40 rounded-3xl border border-border backdrop-blur-sm">
-              <LeaderHighlight name={leader.name} avatarUrl={leader.avatarUrl} likes={leader.likes} />
+              <LeaderHighlight name={leader.name} avatarUrl={leader.avatarUrl} likes={leader.likes ?? 0} />
             </section>
           ) : null}
 

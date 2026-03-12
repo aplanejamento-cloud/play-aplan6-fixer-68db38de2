@@ -149,12 +149,12 @@ export function useDuels() {
     if (challengedProfile && challengerProfile) {
       await supabase
         .from("profiles")
-        .update({ total_likes: Math.max(0, challengedProfile.total_likes - 10) })
+        .update({ total_likes: Math.max(0, (challengedProfile.total_likes ?? 0) - 10) })
         .eq("user_id", duel.challenged_id);
 
       await supabase
         .from("profiles")
-        .update({ total_likes: challengerProfile.total_likes + 10 })
+        .update({ total_likes: (challengerProfile.total_likes ?? 0) + 10 })
         .eq("user_id", duel.challenger_id);
     }
 
@@ -212,7 +212,7 @@ export function useDuels() {
         // FATALITÉ: winner gets all loser's likes, loser goes to 0
         await supabase
           .from("profiles")
-          .update({ total_likes: winnerProfile.total_likes + loserProfile.total_likes })
+          .update({ total_likes: (winnerProfile.total_likes ?? 0) + (loserProfile.total_likes ?? 0) })
           .eq("user_id", winnerId!);
         await supabase
           .from("profiles")
@@ -222,11 +222,11 @@ export function useDuels() {
         // Normal: transfer hardcoded stake
         await supabase
           .from("profiles")
-          .update({ total_likes: Math.max(0, loserProfile.total_likes - stakeAmount) })
+          .update({ total_likes: Math.max(0, (loserProfile.total_likes ?? 0) - stakeAmount) })
           .eq("user_id", loserId!);
         await supabase
           .from("profiles")
-          .update({ total_likes: winnerProfile.total_likes + stakeAmount })
+          .update({ total_likes: (winnerProfile.total_likes ?? 0) + stakeAmount })
           .eq("user_id", winnerId!);
       }
     }

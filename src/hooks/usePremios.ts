@@ -103,10 +103,10 @@ export function useResgatarPremio() {
       premioId: string; userId: string; likesCusto: number; codigoTicket: string; enderecoCompleto: string | null;
     }) => {
       const { data: profile } = await supabase.from("profiles").select("total_likes").eq("user_id", userId).single();
-      if (!profile || profile.total_likes < likesCusto) throw new Error("Saldo insuficiente");
+      if (!profile || (profile.total_likes ?? 0) < likesCusto) throw new Error("Saldo insuficiente");
 
       const { data: premio } = await supabase.from("premios").select("estoque").eq("id", premioId).single();
-      if (!premio || premio.estoque < 1) throw new Error("Sem estoque");
+      if (!premio || (premio.estoque ?? 0) < 1) throw new Error("Sem estoque");
 
       const { error: rErr } = await supabase.from("resgates").insert({
         usuario_id: userId,
@@ -118,7 +118,7 @@ export function useResgatarPremio() {
       if (rErr) throw rErr;
 
       // Only deduct likes from user - estoque is decremented when doador verifies senha
-      await supabase.from("profiles").update({ total_likes: profile.total_likes - likesCusto }).eq("user_id", userId);
+      await supabase.from("profiles").update({ total_likes: (profile.total_likes ?? 0) - likesCusto }).eq("user_id", userId);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["premios"] });
@@ -153,7 +153,7 @@ export function useAprovarDoacao() {
       if (pErr) throw pErr;
       const { data: profile } = await supabase.from("profiles").select("total_likes").eq("user_id", doacao.usuario_id).single();
       if (profile) {
-        await supabase.from("profiles").update({ total_likes: profile.total_likes + doacao.likes_recebidos }).eq("user_id", doacao.usuario_id);
+        await supabase.from("profiles").update({ total_likes: (profile.total_likes ?? 0) + (doacao.likes_recebidos ?? 0) }).eq("user_id", doacao.usuario_id);
       }
       await supabase.from("doacoes_premios").update({ aprovado: true }).eq("id", doacao.id);
     },

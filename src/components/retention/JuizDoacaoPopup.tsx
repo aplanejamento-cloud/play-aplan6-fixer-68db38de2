@@ -45,7 +45,7 @@ const JuizDoacaoPopup = () => {
     const now = new Date();
     const referenceDate = juizProfile.ultima_doacao
       ? new Date(juizProfile.ultima_doacao)
-      : new Date(juizProfile.created_at);
+      : new Date(juizProfile.created_at!);
 
     const daysSince = Math.floor(
       (now.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24)
