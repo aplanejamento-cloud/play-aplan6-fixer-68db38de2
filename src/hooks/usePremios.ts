@@ -103,7 +103,7 @@ export function useResgatarPremio() {
       premioId: string; userId: string; likesCusto: number; codigoTicket: string; enderecoCompleto: string | null;
     }) => {
       const { data: profile } = await supabase.from("profiles").select("total_likes").eq("user_id", userId).single();
-      if (!profile || profile.total_likes < likesCusto) throw new Error("Saldo insuficiente");
+      if (!profile || (profile.total_likes ?? 0) < likesCusto) throw new Error("Saldo insuficiente");
 
       const { data: premio } = await supabase.from("premios").select("estoque").eq("id", premioId).single();
       if (!premio || premio.estoque < 1) throw new Error("Sem estoque");
