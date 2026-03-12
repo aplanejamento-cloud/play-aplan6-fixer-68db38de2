@@ -265,13 +265,16 @@ const PostCard = ({ post }: PostCardProps) => {
 
       {/* Footer */}
       <div className="p-3 space-y-3">
-        <div className="flex items-center gap-2 text-sm">
+        <button
+          onClick={() => setShowLikers(true)}
+          className="flex items-center gap-2 text-sm hover:opacity-80 transition-opacity cursor-pointer"
+        >
           <Heart className={cn("w-4 h-4", post.likes_count >= 0 ? "text-primary fill-primary" : "text-destructive")} />
           <span className={cn("font-bold", post.likes_count >= 10 ? "text-primary glow-gold" : post.likes_count < 0 ? "text-destructive" : "text-foreground")}>
             {post.likes_count.toLocaleString("pt-BR")}
           </span>
-          <span className="text-muted-foreground">likes</span>
-        </div>
+          <span className="text-muted-foreground underline">likes</span>
+        </button>
 
         <footer className="flex flex-wrap gap-2 pt-2 border-t border-border">
           <InteractionButton type="like" icon={Heart} label="Curtir" activeClass="bg-primary/20 text-primary" value="+1" />
