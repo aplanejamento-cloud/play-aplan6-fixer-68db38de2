@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 const loggedOutItems = [
   { path: "/", label: "🏠 Home", icon: Home },
   { path: "/patrocinador", label: "👑 Patrocínio", icon: Crown },
-  { path: "/eliminados", label: "⚰️ Eliminados", icon: Skull },
+  { path: "/eliminados", label: "👎 Eliminados", icon: ThumbsDown },
 ];
 
 const GlobalNav = () => {
