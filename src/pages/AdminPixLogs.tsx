@@ -46,7 +46,7 @@ const AdminPixLogs = () => {
   const rejeitados = compras.filter(c => c.status === "rejeitado");
   const totalAprovado = aprovados.reduce((s, c) => s + Number(c.valor), 0);
   const totalHoje = compras
-    .filter(c => c.status === "aprovado" && new Date(c.created_at).toDateString() === new Date().toDateString())
+    .filter(c => c.status === "aprovado" && new Date(c.created_at!).toDateString() === new Date().toDateString())
     .reduce((s, c) => s + Number(c.valor), 0);
 
   return (
