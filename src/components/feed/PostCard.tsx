@@ -382,8 +382,72 @@ const PostCard = ({ post }: PostCardProps) => {
           onConfirm={handleChallengeConfirm}
         />
       )}
+
+      {/* Likers Dialog */}
+      <LikersDialog open={showLikers} onOpenChange={setShowLikers} postId={post.id} />
     </article>
   );
+};
+
+/* Likers Dialog - shows who liked the post */
+const LikersDialog = ({ open, onOpenChange, postId }: { open: boolean; onOpenChange: (o: boolean) => void; postId: string }) => {
+  const navigate = useNavigate();
+  const { data: likers = [], isLoading } = useQuery({
+    queryKey: ["post-likers", postId],
+    enabled: open,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("post_interactions")
+        .select("interaction_type, user_id")
+        .eq("post_id", postId)
+        .order("created_at", { ascending: false });
+      if (!data || data.length === 0) return [];
+      const userIds = [...new Set(data.map(d => d.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, name, avatar_url")
+        .in("user_id", userIds);
+      return data.map(d => ({
+        ...d,
+        profile: profiles?.find(p => p.user_id === d.user_id),
+      }));
+    },
+  });
+
+  const emojiMap: Record<string, string> = { like: "❤️", love: "🔥", bomb: "💣" };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm max-h-[70vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-primary font-cinzel">Quem interagiu</DialogTitle>
+        </DialogHeader>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground text-center py-4">Carregando...</p>
+        ) : likers.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">Nenhuma interação ainda.</p>
+        ) : (
+          <div className="space-y-2">
+            {likers.map((l, i) => (
+              <button
+                key={i}
+                onClick={() => { onOpenChange(false); navigate(`/profile/${l.user_id}`); }}
+                className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
+              >
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={l.profile?.avatar_url || ""} />
+                  <AvatarFallback>{l.profile?.name?.charAt(0) || "?"}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium text-foreground flex-1">{l.profile?.name || "Anônimo"}</span>
+                <span className="text-lg">{emojiMap[l.interaction_type] || "❤️"}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};
 };
 
 export default PostCard;
