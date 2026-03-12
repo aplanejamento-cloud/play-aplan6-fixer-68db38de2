@@ -92,7 +92,7 @@ const Index = () => {
     id: p.id,
     userId: p.user_id,
     name: p.name,
-    likes: p.total_likes,
+    likes: p.total_likes ?? 0,
     position: i + 1,
     avatarUrl: p.avatar_url || undefined,
   }));
