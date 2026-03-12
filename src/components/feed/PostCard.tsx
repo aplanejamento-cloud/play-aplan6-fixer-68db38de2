@@ -288,8 +288,8 @@ const PostCard = ({ post }: PostCardProps) => {
             </button>
           )}
           
-          {/* Challenge button - only for other jogadores */}
-          {user && !isOwnPost && isTargetJogador && profile?.user_type === "jogador" && (
+          {/* Challenge button - only jogadores can challenge other jogadores (juiz blocked) */}
+          {user && !isOwnPost && isTargetJogador && profile?.user_type === "jogador" && !post.author?.eliminated_at && (
             <button
               onClick={() => setShowChallenge(true)}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all"
