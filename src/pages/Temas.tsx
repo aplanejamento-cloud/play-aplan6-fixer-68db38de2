@@ -74,7 +74,6 @@ const Temas = () => {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <GlobalNav />
 
       {/* LIST VIEW */}
       {!selectedTema && (

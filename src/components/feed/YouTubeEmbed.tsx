@@ -78,7 +78,7 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
 
   if (!videoId) return null;
 
-  const iframeSrc = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&modestbranding=1&rel=0&playsinline=1&controls=0&showinfo=0&iv_load_policy=3&origin=${window.location.origin}`;
+  const iframeSrc = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&modestbranding=1&rel=0&playsinline=1&controls=1&showinfo=0&iv_load_policy=3&origin=${window.location.origin}`;
   const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
 
   return (

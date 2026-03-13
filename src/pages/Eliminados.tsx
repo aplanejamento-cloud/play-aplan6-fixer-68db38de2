@@ -5,7 +5,10 @@ import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Skull, Search } from "lucide-react";
+import { ThumbsDown, Search } from "lucide-react";
+import GlobalNav from "@/components/GlobalNav";
+import LoginButton from "@/components/home/LoginButton";
+import { useAuth } from "@/contexts/AuthContext";
 import AppHeader from "@/components/AppHeader";
 import InviteButton from "@/components/InviteButton";
 
