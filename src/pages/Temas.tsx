@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { useCreatePost } from "@/hooks/usePosts";
 import AppHeader from "@/components/AppHeader";
-import GlobalNav from "@/components/GlobalNav";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";

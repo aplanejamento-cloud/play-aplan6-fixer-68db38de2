@@ -14,6 +14,7 @@ import InviteButton from "@/components/InviteButton";
 
 const Eliminados = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
 
   const { data: eliminados = [], isLoading } = useQuery({
@@ -44,12 +45,24 @@ const Eliminados = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <AppHeader />
-      <InviteButton />
+      {user ? (
+        <AppHeader />
+      ) : (
+        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+            <h1 className="font-cinzel text-xl md:text-2xl text-primary glow-gold-subtle">PLAYLIKE</h1>
+            <LoginButton />
+          </div>
+          <div className="container mx-auto px-4 pb-1.5 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
+            <GlobalNav />
+          </div>
+        </header>
+      )}
+      {user && <InviteButton />}
       <main className="container mx-auto px-4 py-6 max-w-2xl space-y-6">
         <div className="text-center space-y-2">
           <h1 className="font-cinzel text-2xl text-destructive flex items-center justify-center gap-2">
-            <Skull className="w-7 h-7" /> Eliminados
+            <ThumbsDown className="w-7 h-7" /> Eliminados
           </h1>
           <p className="text-sm text-muted-foreground">
             Jogadores com 0 likes ou menos são eliminados automaticamente.
@@ -73,7 +86,7 @@ const Eliminados = () => {
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            <Skull className="w-10 h-10 mx-auto mb-2 opacity-30" />
+            <ThumbsDown className="w-10 h-10 mx-auto mb-2 opacity-30" />
             <p>Nenhum jogador eliminado no momento.</p>
           </div>
         ) : (
@@ -81,7 +94,7 @@ const Eliminados = () => {
             {filtered.map((p) => (
               <button
                 key={p.user_id}
-                onClick={() => navigate(`/profile/${p.user_id}`)}
+                onClick={() => navigate(`/@${encodeURIComponent(p.name)}`)}
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:border-destructive/50 transition-colors text-left"
               >
                 <Avatar className="w-12 h-12 border-2 border-destructive/30 grayscale opacity-60">
@@ -92,14 +105,14 @@ const Eliminados = () => {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-muted-foreground line-through truncate">{p.name}</p>
-                  <p className="text-xs text-destructive font-bold">💀 ELIMINADO · {p.total_likes} likes</p>
+                  <p className="text-xs text-destructive font-bold">👎 ELIMINADO · {p.total_likes} likes</p>
                   {p.eliminated_at && (
                     <p className="text-xs text-muted-foreground">
                       Retorno em {getDaysRemaining(p.eliminated_at)} dias
                     </p>
                   )}
                 </div>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-destructive/20 text-destructive font-bold">💀</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-destructive/20 text-destructive font-bold">👎</span>
               </button>
             ))}
           </div>

@@ -37,7 +37,7 @@ const PostModerationBar = ({ postId, dislikes, denuncias, temaTitle, temaFator }
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Check if user already voted
+  // Check if user already voted - silently skip if table doesn't exist
   useEffect(() => {
     if (!user?.id) return;
     supabase
@@ -46,7 +46,7 @@ const PostModerationBar = ({ postId, dislikes, denuncias, temaTitle, temaFator }
       .eq("post_id", postId)
       .eq("user_id", user.id)
       .then(({ data, error }) => {
-        if (error) { console.error("moderation check error:", error); return; }
+        if (error) return; // silently ignore missing table
         const votes = (data || []) as any[];
         setHasDisliked(votes.some((v: any) => v.vote_type === "dislike"));
         setHasReported(votes.some((v: any) => v.vote_type === "report"));

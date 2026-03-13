@@ -90,7 +90,7 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
           title="YouTube video"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen={false}
-          className="w-full h-full border-0 pointer-events-none"
+          className="w-full h-full border-0"
         />
       ) : (
         <img

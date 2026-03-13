@@ -2,7 +2,10 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useAuth } from "@/contexts/AuthContext";
 import AppHeader from "@/components/AppHeader";
+import GlobalNav from "@/components/GlobalNav";
+import LoginButton from "@/components/home/LoginButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +14,7 @@ import { toast } from "sonner";
 
 const Patrocinador = () => {
   const { isAdmin } = useIsAdmin();
+  const { user } = useAuth();
 
   const { data: patrocinio } = useQuery({
     queryKey: ["patrocinio-whatsapp"],
@@ -49,7 +53,19 @@ const Patrocinador = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <AppHeader />
+      {user ? (
+        <AppHeader />
+      ) : (
+        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+            <h1 className="font-cinzel text-xl md:text-2xl text-primary glow-gold-subtle">PLAYLIKE</h1>
+            <LoginButton />
+          </div>
+          <div className="container mx-auto px-4 pb-1.5 overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
+            <GlobalNav />
+          </div>
+        </header>
+      )}
       <main className="container mx-auto px-4 py-8 max-w-2xl space-y-8">
         {/* Admin edit */}
         {isAdmin && (
