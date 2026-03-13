@@ -66,7 +66,7 @@ const GlobalNav = () => {
     { path: "/regras", label: "Regras", icon: BookOpen, requiresGame: false, requiresAuth: true },
     { path: "/ajuda", label: "Ajuda", icon: HelpCircle, requiresGame: false, requiresAuth: true },
     
-    { path: "/comprar-likes", label: "Loja", icon: DollarSign, requiresGame: true, requiresAuth: true },
+    
     { path: "/downloads", label: "Downloads", icon: Download, requiresGame: false, requiresAuth: true },
     { path: "/ebooks", label: "Ebooks", icon: FileText, requiresGame: false, requiresAuth: true },
     { path: "/eliminados", label: "Eliminados", icon: ThumbsDown, requiresGame: false, requiresAuth: false },

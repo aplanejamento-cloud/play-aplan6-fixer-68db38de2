@@ -46,7 +46,7 @@ const TopTenList = forwardRef<HTMLDivElement, TopTenListProps>(
         {players.map((player) => (
           <div
             key={player.id}
-            onClick={() => player.userId && navigate(`/profile/${player.userId}`)}
+            onClick={() => player.name && navigate(`/@${encodeURIComponent(player.name)}`)}
             className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-xl bg-card/60 border border-border hover:border-primary/50 hover:shadow-gold transition-all duration-300 group cursor-pointer"
           >
             {/* Position badge */}
