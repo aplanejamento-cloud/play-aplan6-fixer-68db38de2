@@ -1,4 +1,4 @@
-import { Crown } from "lucide-react";
+const Logo = () => {
 
 const Logo = () => {
   return (
