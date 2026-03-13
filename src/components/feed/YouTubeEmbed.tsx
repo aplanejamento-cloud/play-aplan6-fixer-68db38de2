@@ -1,5 +1,5 @@
 import { useMemo, useRef, useEffect, useState, useCallback } from "react";
-import { Play, Pause } from "lucide-react";
+import { Play } from "lucide-react";
 
 interface YouTubeEmbedProps {
   url: string;
