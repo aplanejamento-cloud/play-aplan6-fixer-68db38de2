@@ -46,7 +46,7 @@ const TopTenList = forwardRef<HTMLDivElement, TopTenListProps>(
         {players.map((player) => (
           <div
             key={player.id}
-            onClick={() => player.name && navigate(`/@${player.name.toLowerCase().replace(/\s+/g, '-')}`)}
+            onClick={() => player.name && navigate(`/@${player.name.toLowerCase().replace(/\s+/g, '').normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`)}
             className="flex flex-col items-center gap-2 p-3 md:p-4 rounded-xl bg-card/60 border border-border hover:border-primary/50 hover:shadow-gold transition-all duration-300 group cursor-pointer"
           >
             {/* Position badge */}
