@@ -709,16 +709,15 @@ const Profile = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Avatar Editor */}
-        <UnifiedEditorModal
+        {/* Avatar Crop - Direct crop dialog without full editor */}
+        <AvatarCropDialog
           open={showCropDialog}
           onOpenChange={setShowCropDialog}
-          mode="avatar"
-          initialImage={cropImageSrc || undefined}
-          onAvatarComplete={handleCropComplete}
+          imageSrc={cropImageSrc || ""}
+          onCropComplete={handleCropComplete}
         />
 
-        {/* Photo Editor */}
+        {/* Photo Editor - centered modal */}
         <UnifiedEditorModal
           open={showPhotoCrop}
           onOpenChange={setShowPhotoCrop}
