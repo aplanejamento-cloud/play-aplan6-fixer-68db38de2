@@ -99,17 +99,17 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
           className="w-full h-full object-cover"
         />
       )}
-      {/* Overlay: only shown when not playing to start video */}
-      {!playing && (
-        <div
-          onClick={handleToggle}
-          className="absolute inset-0 cursor-pointer flex items-center justify-center z-10"
-        >
+      {/* Overlay for play/pause control */}
+      <div
+        onClick={handleToggle}
+        className="absolute inset-0 cursor-pointer flex items-center justify-center z-10"
+      >
+        {!playing && (
           <div className="bg-black/70 rounded-full p-5 text-white hover:bg-black/90 transition-colors shadow-lg">
             <Play className="w-10 h-10 fill-white" />
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
