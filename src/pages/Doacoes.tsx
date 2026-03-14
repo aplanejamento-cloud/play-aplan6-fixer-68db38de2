@@ -190,10 +190,12 @@ const DonationForm = () => {
   const [whatsapp, setWhatsapp] = useState("");
   const [videoUploading, setVideoUploading] = useState(false);
 
-  const doarMutation = useMutation({
+    const doarMutation = useMutation({
     mutationFn: async () => {
       if (!user || !selectedFile) throw new Error("Arquivo obrigatório");
       if (!whatsapp.trim()) throw new Error("WhatsApp é obrigatório");
+      // Required fields validation
+      if (!estado.trim() || !cidade.trim() || !endereco.trim()) throw new Error("Preencha estado, cidade e endereço (obrigatórios)");
       const url = await upload(selectedFile);
       if (!url) throw new Error("Falha no upload");
       const { error } = await supabase.from("doacoes_premios").insert({
