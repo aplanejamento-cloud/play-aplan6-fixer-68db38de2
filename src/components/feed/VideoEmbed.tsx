@@ -23,7 +23,7 @@ function getEmbedUrl(url: string, platform: Platform): string | null {
         /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/
       );
       return m
-        ? `https://www.youtube.com/embed/${m[1]}?enablejsapi=1&modestbranding=1&rel=0&playsinline=1&controls=1&showinfo=0&iv_load_policy=3&origin=${window.location.origin}`
+        ? `https://www.youtube.com/embed/${m[1]}?enablejsapi=1&modestbranding=1&rel=0&playsinline=1&controls=0&showinfo=0&iv_load_policy=3&origin=${window.location.origin}`
         : null;
     }
     case "instagram": {
@@ -67,6 +67,13 @@ export function extractVideoUrl(text: string): { url: string; platform: Platform
   return { url, platform };
 }
 
+function formatTime(seconds: number): string {
+  if (!isFinite(seconds) || seconds < 0) return "0:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 const VideoEmbed = ({ url }: VideoEmbedProps) => {
   const platform = useMemo(() => detectPlatform(url), [url]);
   const embedUrl = useMemo(() => (platform ? getEmbedUrl(url, platform) : null), [url, platform]);
@@ -74,22 +81,81 @@ const VideoEmbed = ({ url }: VideoEmbedProps) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isSeeking, setIsSeeking] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const instanceId = useMemo(
     () => `embed-${platform}-${Math.random().toString(36).slice(2, 8)}`,
     [platform]
   );
 
+  const isYouTube = platform === "youtube";
+
   // YouTube postMessage commands
   const sendYTCommand = useCallback(
     (func: string, args?: unknown) => {
-      if (platform !== "youtube") return;
+      if (!isYouTube) return;
       iframeRef.current?.contentWindow?.postMessage(
         JSON.stringify({ event: "command", func, args: args ?? "" }),
         "*"
       );
     },
-    [platform]
+    [isYouTube]
   );
+
+  // Listen for YouTube iframe API state messages
+  useEffect(() => {
+    if (!isYouTube) return;
+
+    const handler = (e: MessageEvent) => {
+      if (typeof e.data !== "string") return;
+      try {
+        const data = JSON.parse(e.data);
+        if (data.event === "infoDelivery" && data.info) {
+          if (typeof data.info.currentTime === "number" && !isSeeking) {
+            setCurrentTime(data.info.currentTime);
+          }
+          if (typeof data.info.duration === "number" && data.info.duration > 0) {
+            setDuration(data.info.duration);
+          }
+          if (typeof data.info.muted === "boolean") {
+            setMuted(data.info.muted);
+          }
+          if (typeof data.info.playerState === "number") {
+            // 0=ended, 1=playing, 2=paused
+            if (data.info.playerState === 1) setPlaying(true);
+            else if (data.info.playerState === 2 || data.info.playerState === 0) setPlaying(false);
+          }
+        }
+      } catch {
+        // ignore non-JSON messages
+      }
+    };
+
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [isYouTube, isSeeking]);
+
+  // Poll for time updates when playing (YouTube iframe API sends infoDelivery)
+  useEffect(() => {
+    if (isYouTube && playing) {
+      // Request current time periodically by listening to iframe events
+      // The YouTube iframe API sends infoDelivery automatically when enablejsapi=1
+      pollRef.current = setInterval(() => {
+        sendYTCommand("getDuration");
+        sendYTCommand("getCurrentTime");
+      }, 500);
+    } else {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    }
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [isYouTube, playing, sendYTCommand]);
 
   // Play/pause toggle
   const handleToggle = useCallback(() => {
@@ -103,35 +169,42 @@ const VideoEmbed = ({ url }: VideoEmbedProps) => {
     }
   }, [playing, sendYTCommand, instanceId]);
 
-  // Seek ±15s (YouTube only)
+  // Seek ±delta seconds (YouTube only)
   const handleSeek = useCallback(
     (delta: number) => {
-      if (platform !== "youtube") return;
-      iframeRef.current?.contentWindow?.postMessage(
-        JSON.stringify({
-          event: "command",
-          func: "getCurrentTime",
-          args: "",
-        }),
-        "*"
-      );
-      // Since we can't easily get current time, use seekTo with relative
-      // We'll just use the YouTube API seekTo approach
-      sendYTCommand("seekBy", [delta]);
+      if (!isYouTube) return;
+      const newTime = Math.max(0, Math.min(currentTime + delta, duration));
+      sendYTCommand("seekTo", [newTime, true]);
+      setCurrentTime(newTime);
     },
-    [platform, sendYTCommand]
+    [isYouTube, currentTime, duration, sendYTCommand]
+  );
+
+  // Seek to specific percentage from progress bar
+  const handleProgressChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!isYouTube || duration <= 0) return;
+      const pct = parseFloat(e.target.value);
+      const newTime = (pct / 100) * duration;
+      setCurrentTime(newTime);
+      setIsSeeking(true);
+      sendYTCommand("seekTo", [newTime, true]);
+      // Release seeking lock after a short delay
+      setTimeout(() => setIsSeeking(false), 600);
+    },
+    [isYouTube, duration, sendYTCommand]
   );
 
   // Mute toggle (YouTube only)
   const handleMute = useCallback(() => {
-    if (platform !== "youtube") return;
+    if (!isYouTube) return;
     if (muted) {
       sendYTCommand("unMute");
     } else {
       sendYTCommand("mute");
     }
     setMuted(!muted);
-  }, [platform, muted, sendYTCommand]);
+  }, [isYouTube, muted, sendYTCommand]);
 
   // Pause when another embed starts
   useEffect(() => {
@@ -143,7 +216,6 @@ const VideoEmbed = ({ url }: VideoEmbedProps) => {
       }
     };
     window.addEventListener("video-embed-play", handler);
-    // Also listen to old youtube-play events for backwards compat
     window.addEventListener("youtube-play", handler);
     return () => {
       window.removeEventListener("video-embed-play", handler);
@@ -182,7 +254,6 @@ const VideoEmbed = ({ url }: VideoEmbedProps) => {
 
   if (!platform || !embedUrl) return null;
 
-  const isYouTube = platform === "youtube";
   const videoId = isYouTube
     ? url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/)?.[1]
     : null;
@@ -190,9 +261,11 @@ const VideoEmbed = ({ url }: VideoEmbedProps) => {
     ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
     : null;
 
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   return (
     <div ref={containerRef} className="relative w-full aspect-video rounded-lg overflow-hidden bg-black">
-      {/* IFRAME - always rendered for non-YouTube, lazy for YouTube */}
+      {/* IFRAME */}
       <iframe
         ref={iframeRef}
         src={isYouTube ? (playing ? `${embedUrl}&autoplay=1` : embedUrl) : embedUrl}
@@ -202,26 +275,22 @@ const VideoEmbed = ({ url }: VideoEmbedProps) => {
         className="w-full h-full border-0"
         style={{
           display: isYouTube && !playing ? "none" : "block",
-          pointerEvents: isYouTube ? "auto" : "auto",
         }}
       />
 
-      {/* Block external links overlay - covers logo areas */}
+      {/* Block external links overlay */}
       {(playing || !isYouTube) && (
         <>
-          {/* Top-right: YouTube logo / platform branding */}
           <div
             className="absolute top-0 right-0 w-28 h-14 z-20 cursor-default"
             style={{ pointerEvents: "auto" }}
             onClick={(e) => e.stopPropagation()}
           />
-          {/* Bottom-right: fullscreen button area */}
           <div
             className="absolute bottom-0 right-0 w-12 h-12 z-20 cursor-default"
             style={{ pointerEvents: "auto" }}
             onClick={(e) => e.stopPropagation()}
           />
-          {/* For non-YouTube: also block top-left branding */}
           {!isYouTube && (
             <div
               className="absolute top-0 left-0 w-28 h-14 z-20 cursor-default"
@@ -251,35 +320,78 @@ const VideoEmbed = ({ url }: VideoEmbedProps) => {
         </>
       )}
 
-      {/* YouTube external controls bar */}
-      {isYouTube && playing && (
-        <div className="absolute bottom-0 left-0 right-0 z-30 flex items-center justify-center gap-1 py-1.5 px-2 bg-black/70">
-          <button
-            onClick={() => handleSeek(-15)}
-            className="p-1.5 rounded text-white/80 hover:text-white transition-colors"
-            title="-15s"
-          >
-            <SkipBack className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleToggle}
-            className="p-1.5 rounded text-white/80 hover:text-white transition-colors"
-          >
-            {playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 fill-white" />}
-          </button>
-          <button
-            onClick={() => handleSeek(15)}
-            className="p-1.5 rounded text-white/80 hover:text-white transition-colors"
-            title="+15s"
-          >
-            <SkipForward className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleMute}
-            className="p-1.5 rounded text-white/80 hover:text-white transition-colors ml-2"
-          >
-            {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-          </button>
+      {/* UNIVERSAL CONTROLS BAR */}
+      {playing && (
+        <div className="absolute bottom-0 left-0 right-0 z-30 space-y-1 p-2 bg-black/80 backdrop-blur-sm">
+          {/* PROGRESS BAR - YouTube only */}
+          {isYouTube && (
+            <div className="flex items-center gap-2 text-white">
+              <span className="w-10 text-[10px] text-white/70 font-mono text-right tabular-nums">
+                {formatTime(currentTime)}
+              </span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="0.1"
+                value={progress}
+                onChange={handleProgressChange}
+                className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer bg-white/20
+                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 
+                  [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-500 [&::-webkit-slider-thumb]:shadow-md
+                  [&::-webkit-slider-thumb]:hover:scale-125 [&::-webkit-slider-thumb]:transition-transform
+                  [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full 
+                  [&::-moz-range-thumb]:bg-red-500 [&::-moz-range-thumb]:border-0"
+                style={{
+                  background: `linear-gradient(to right, #ef4444 ${progress}%, rgba(255,255,255,0.2) ${progress}%)`,
+                }}
+              />
+              <span className="w-10 text-[10px] text-white/70 font-mono tabular-nums">
+                {formatTime(duration)}
+              </span>
+            </div>
+          )}
+
+          {/* BUTTONS - universal */}
+          <div className="flex items-center justify-center gap-1">
+            {/* ±15s - YouTube only */}
+            {isYouTube && (
+              <button
+                onClick={() => handleSeek(-15)}
+                className="p-1.5 rounded text-white/70 hover:text-white transition-colors"
+                title="-15s"
+              >
+                <SkipBack className="w-4 h-4" />
+              </button>
+            )}
+
+            <button
+              onClick={handleToggle}
+              className="p-2 rounded-full text-white hover:bg-white/10 transition-colors"
+            >
+              {playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 fill-white" />}
+            </button>
+
+            {isYouTube && (
+              <button
+                onClick={() => handleSeek(15)}
+                className="p-1.5 rounded text-white/70 hover:text-white transition-colors"
+                title="+15s"
+              >
+                <SkipForward className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Mute - YouTube only (other platforms don't support API) */}
+            {isYouTube && (
+              <button
+                onClick={handleMute}
+                className="p-1.5 rounded text-white/70 hover:text-white transition-colors ml-2"
+              >
+                {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
