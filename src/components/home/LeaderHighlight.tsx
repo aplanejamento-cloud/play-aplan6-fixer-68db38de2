@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { Heart, Crown, Star } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useNavigate } from "react-router-dom";
 
 interface LeaderHighlightProps {
   name: string;
@@ -11,9 +12,11 @@ interface LeaderHighlightProps {
 const LeaderHighlight = forwardRef<HTMLDivElement, LeaderHighlightProps>(
   ({ name, avatarUrl, likes }, ref) => {
   const formattedLikes = likes.toLocaleString("pt-BR");
+  const navigate = useNavigate();
+  const slug = name.toLowerCase().replace(/\s+/g, '-');
 
   return (
-    <div ref={ref} className="relative flex flex-col items-center gap-4 p-6 md:p-8">
+    <div ref={ref} onClick={() => navigate(`/@${slug}`)} className="relative flex flex-col items-center gap-4 p-6 md:p-8 cursor-pointer">
       {/* Crown on top */}
       <div className="absolute -top-2 md:-top-4">
         <Crown className="w-10 h-10 md:w-14 md:h-14 text-primary glow-gold animate-float" />
