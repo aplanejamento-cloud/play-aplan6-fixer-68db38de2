@@ -73,6 +73,7 @@ const AdminAssetsPanel = () => {
                 {upload.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enviar"}
               </Button>
             </div>
+            {upload.isPending && <Progress value={undefined} className="h-1" />}
           </div>
 
           {assets.map((a) => (

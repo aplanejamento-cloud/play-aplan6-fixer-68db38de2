@@ -102,16 +102,20 @@ const AdminTemasPanel = () => {
               <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex: FUNK GOSPEL" className="flex-1" />
               <Input value={fator} onChange={(e) => setFator(e.target.value)} placeholder="2.0" className="w-16" type="number" step="0.5" min="1" max="5" />
             </div>
-            <div className="flex gap-2">
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" />
+            <div className="flex gap-2 items-center">
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
               <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
                 <Upload className="w-4 h-4 mr-1" /> Foto
               </Button>
+              {selectedFileName && (
+                <p className="text-xs text-primary truncate">📎 {selectedFileName}</p>
+              )}
               <Button size="sm" onClick={handleCreate} disabled={uploading || !titulo.trim()}>
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-1" />}
                 Criar
               </Button>
             </div>
+            {uploading && <Progress value={undefined} className="h-1" />}
           </div>
 
           {/* List */}
