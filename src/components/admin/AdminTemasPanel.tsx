@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { Palette, ChevronDown, ChevronUp, Plus, Trash2, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -14,6 +15,7 @@ const AdminTemasPanel = () => {
   const [titulo, setTitulo] = useState("");
   const [fator, setFator] = useState("2.0");
   const [uploading, setUploading] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -31,11 +33,12 @@ const AdminTemasPanel = () => {
     onSuccess: () => {
       setTitulo("");
       setFator("2.0");
+      setSelectedFileName("");
       queryClient.invalidateQueries({ queryKey: ["temas"] });
       queryClient.invalidateQueries({ queryKey: ["temas-all"] });
-      toast.success("Tema criado!");
+      toast.success("✅ Tema criado!");
     },
-    onError: () => toast.error("Erro ao criar tema"),
+    onError: () => toast.error("❌ Erro ao criar tema"),
   });
 
   const deleteTema = useMutation({
@@ -59,13 +62,19 @@ const AdminTemasPanel = () => {
     },
   });
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    setSelectedFileName(f ? f.name : "");
+  };
+
   const handleCreate = async () => {
     const file = fileRef.current?.files?.[0];
     if (file) {
       setUploading(true);
+      toast.info(`Enviando ${file.name}...`);
       const path = `temas/${Date.now()}-${file.name}`;
       const { error } = await supabase.storage.from("home-media").upload(path, file);
-      if (error) { toast.error("Erro upload"); setUploading(false); return; }
+      if (error) { toast.error("❌ Erro upload"); setUploading(false); return; }
       const { data } = supabase.storage.from("home-media").getPublicUrl(path);
       await createTema.mutateAsync(data.publicUrl);
       setUploading(false);
