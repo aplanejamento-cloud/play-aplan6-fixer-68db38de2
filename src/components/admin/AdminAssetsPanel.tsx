@@ -3,6 +3,7 @@ import { useAssets, useUploadAsset, useDeleteAsset } from "@/hooks/useAssetsMark
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { FolderDown, ChevronDown, ChevronUp, Upload, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -72,6 +73,7 @@ const AdminAssetsPanel = () => {
                 {upload.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enviar"}
               </Button>
             </div>
+            {upload.isPending && <Progress value={undefined} className="h-1" />}
           </div>
 
           {assets.map((a) => (
