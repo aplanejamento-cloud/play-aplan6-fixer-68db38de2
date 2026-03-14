@@ -190,10 +190,12 @@ const DonationForm = () => {
   const [whatsapp, setWhatsapp] = useState("");
   const [videoUploading, setVideoUploading] = useState(false);
 
-  const doarMutation = useMutation({
+    const doarMutation = useMutation({
     mutationFn: async () => {
       if (!user || !selectedFile) throw new Error("Arquivo obrigatório");
       if (!whatsapp.trim()) throw new Error("WhatsApp é obrigatório");
+      // Required fields validation
+      if (!estado.trim() || !cidade.trim() || !endereco.trim()) throw new Error("Preencha estado, cidade e endereço (obrigatórios)");
       const url = await upload(selectedFile);
       if (!url) throw new Error("Falha no upload");
       const { error } = await supabase.from("doacoes_premios").insert({
@@ -271,16 +273,18 @@ const DonationForm = () => {
         </div>
       </div>
 
-      <div>
-        <label className="text-xs text-muted-foreground mb-1 block">Prateleira</label>
-        <Select value={prateleira} onValueChange={(v) => setPrateleira(v as "1" | "2")}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {isAdmin && <SelectItem value="1">🏆 Prêmios Maiores</SelectItem>}
-            <SelectItem value="2">📍 Retirada Local Doador</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {isAdmin && (
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Prateleira</label>
+          <Select value={prateleira} onValueChange={(v) => setPrateleira(v as "1" | "2")}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">🏆 Prêmios Maiores</SelectItem>
+              <SelectItem value="2">📍 Retirada Local Doador</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <div className="space-y-3 border-t border-border pt-4">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -288,12 +292,12 @@ const DonationForm = () => {
           Endereço para retirada
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Input placeholder="Estado" value={estado} onChange={(e) => setEstado(e.target.value)} />
-          <Input placeholder="Cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} />
+          <Input placeholder="Estado *" value={estado} onChange={(e) => setEstado(e.target.value)} className={!estado.trim() ? "border-destructive/50" : ""} />
+          <Input placeholder="Cidade *" value={cidade} onChange={(e) => setCidade(e.target.value)} className={!cidade.trim() ? "border-destructive/50" : ""} />
           <Input placeholder="Bairro" value={bairro} onChange={(e) => setBairro(e.target.value)} />
-          <Input placeholder="Endereço (Rua)" value={endereco} onChange={(e) => setEndereco(e.target.value)} />
+          <Input placeholder="Endereço (Rua) *" value={endereco} onChange={(e) => setEndereco(e.target.value)} className={!endereco.trim() ? "border-destructive/50" : ""} />
           <Input placeholder="Número" value={numero} onChange={(e) => setNumero(e.target.value)} />
-          <Input placeholder="Complemento" value={complemento} onChange={(e) => setComplemento(e.target.value)} />
+          <Input placeholder="Complemento (opcional)" value={complemento} onChange={(e) => setComplemento(e.target.value)} />
         </div>
       </div>
 

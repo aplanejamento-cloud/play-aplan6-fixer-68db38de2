@@ -28,6 +28,7 @@ import AppHeader from "@/components/AppHeader";
 import InviteButton from "@/components/InviteButton";
 import PostCard from "@/components/feed/PostCard";
 import UnifiedEditorModal from "@/components/feed/UnifiedEditorModal";
+import AvatarCropDialog from "@/components/AvatarCropDialog";
 import StreakBadge from "@/components/retention/StreakBadge";
 
 const Profile = () => {
@@ -709,16 +710,15 @@ const Profile = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Avatar Editor */}
-        <UnifiedEditorModal
+        {/* Avatar Crop - Direct crop dialog without full editor */}
+        <AvatarCropDialog
           open={showCropDialog}
           onOpenChange={setShowCropDialog}
-          mode="avatar"
-          initialImage={cropImageSrc || undefined}
-          onAvatarComplete={handleCropComplete}
+          imageSrc={cropImageSrc || ""}
+          onCropComplete={handleCropComplete}
         />
 
-        {/* Photo Editor */}
+        {/* Photo Editor - centered modal */}
         <UnifiedEditorModal
           open={showPhotoCrop}
           onOpenChange={setShowPhotoCrop}
