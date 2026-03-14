@@ -1,11 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useHomeConfig, SecondaryPrize, Sponsor } from "@/hooks/useHomeConfig";
 import RichTextEditor from "@/components/feed/RichTextEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
-import { Upload, Trash2, Save, Loader2, LogOut, Settings, ChevronDown, ChevronUp, LifeBuoy } from "lucide-react";
+import { Upload, Trash2, Save, Loader2, LogOut, Settings, ChevronDown, ChevronUp, FileVideo, FileImage, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSosPendingCount } from "@/hooks/useSos";
@@ -17,63 +17,96 @@ const AdminHomePanel = () => {
   const navigate = useNavigate();
   const { data: sosPending = 0 } = useSosPendingCount();
   const [expanded, setExpanded] = useState(false);
-  const [prizeValue, setPrizeValue] = useState(config?.prize_value || "R$50.000");
-  const [prizeEnabled, setPrizeEnabled] = useState(config?.prize_enabled ?? true);
-  const [promoText, setPromoText] = useState(config?.promo_text || "");
-  const [promoText2, setPromoText2] = useState(config?.promo_text_2 || "");
+  const [prizeValue, setPrizeValue] = useState("");
+  const [prizeEnabled, setPrizeEnabled] = useState(true);
+  const [promoText, setPromoText] = useState("");
+  const [promoText2, setPromoText2] = useState("");
   const [uploadingVideo, setUploadingVideo] = useState<string | null>(null);
   const [uploadingPrize, setUploadingPrize] = useState(false);
   const [uploadingSponsor, setUploadingSponsor] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<Record<string, string>>({});
+
+  const loopRef = useRef<HTMLInputElement>(null);
   const rulesRef = useRef<HTMLInputElement>(null);
   const prizeVideoRef = useRef<HTMLInputElement>(null);
   const secondaryRef = useRef<HTMLInputElement>(null);
   const sponsorRef = useRef<HTMLInputElement>(null);
 
-  useState(() => {
+  // FIX: useEffect instead of useState to sync config
+  useEffect(() => {
     if (config) {
       setPrizeValue(config.prize_value);
       setPrizeEnabled(config.prize_enabled);
       setPromoText(config.promo_text);
       setPromoText2(config.promo_text_2);
     }
-  });
+  }, [config]);
+
+  const getRef = (type: string) => {
+    if (type === "loop") return loopRef;
+    if (type === "rules") return rulesRef;
+    return prizeVideoRef;
+  };
 
   const handleVideoUpload = async (file: File, type: "loop" | "rules" | "prize") => {
     if (file.size > 100 * 1024 * 1024) { toast.error("Vídeo muito grande! Máximo: 100MB"); return; }
+    setSelectedFiles(prev => ({ ...prev, [type]: file.name }));
     setUploadingVideo(type);
-    const url = await uploadHomeMedia(file, `videos`);
-    if (url) {
-      const key = type === "loop" ? "video_loop_url" : type === "rules" ? "video_rules_url" : "video_prize_url";
-      await updateConfig.mutateAsync({ [key]: url });
+    toast.info(`Enviando ${file.name}...`);
+    try {
+      const url = await uploadHomeMedia(file, "videos");
+      if (url) {
+        const key = type === "loop" ? "video_loop_url" : type === "rules" ? "video_rules_url" : "video_prize_url";
+        await updateConfig.mutateAsync({ [key]: url });
+        toast.success(`✅ Vídeo ${type} enviado com sucesso!`);
+        setSelectedFiles(prev => { const n = { ...prev }; delete n[type]; return n; });
+      } else {
+        toast.error(`❌ Falha ao enviar vídeo ${type}`);
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      toast.error(`❌ Erro no upload: ${err instanceof Error ? err.message : "desconhecido"}`);
     }
     setUploadingVideo(null);
   };
 
   const handleSecondaryPrizeUpload = async (files: FileList) => {
     setUploadingPrize(true);
-    const currentPrizes: SecondaryPrize[] = config?.secondary_prizes || [];
-    const newPrizes = [...currentPrizes];
-    for (const file of Array.from(files)) {
-      const isVideo = file.type.startsWith("video/");
-      const isImage = file.type.startsWith("image/");
-      if (!isVideo && !isImage) continue;
-      const url = await uploadHomeMedia(file, "prizes");
-      if (url) newPrizes.push({ id: crypto.randomUUID(), url, type: isVideo ? "video" : "image" });
+    toast.info(`Enviando ${files.length} arquivo(s)...`);
+    try {
+      const currentPrizes: SecondaryPrize[] = config?.secondary_prizes || [];
+      const newPrizes = [...currentPrizes];
+      for (const file of Array.from(files)) {
+        const isVideo = file.type.startsWith("video/");
+        const isImage = file.type.startsWith("image/");
+        if (!isVideo && !isImage) continue;
+        const url = await uploadHomeMedia(file, "prizes");
+        if (url) newPrizes.push({ id: crypto.randomUUID(), url, type: isVideo ? "video" : "image" });
+      }
+      await updateConfig.mutateAsync({ secondary_prizes: newPrizes as unknown as SecondaryPrize[] });
+      toast.success("✅ Prêmios secundários atualizados!");
+    } catch (err) {
+      toast.error("❌ Erro ao enviar prêmios");
     }
-    await updateConfig.mutateAsync({ secondary_prizes: newPrizes as unknown as SecondaryPrize[] });
     setUploadingPrize(false);
   };
 
   const handleSponsorUpload = async (files: FileList) => {
     setUploadingSponsor(true);
-    const currentSponsors: Sponsor[] = config?.sponsors || [];
-    const newSponsors = [...currentSponsors];
-    for (const file of Array.from(files)) {
-      if (!file.type.startsWith("image/")) continue;
-      const url = await uploadHomeMedia(file, "sponsors");
-      if (url) newSponsors.push({ id: crypto.randomUUID(), url });
+    toast.info(`Enviando ${files.length} logo(s)...`);
+    try {
+      const currentSponsors: Sponsor[] = config?.sponsors || [];
+      const newSponsors = [...currentSponsors];
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith("image/")) continue;
+        const url = await uploadHomeMedia(file, "sponsors");
+        if (url) newSponsors.push({ id: crypto.randomUUID(), url });
+      }
+      await updateConfig.mutateAsync({ sponsors: newSponsors as unknown as Sponsor[] });
+      toast.success("✅ Patrocinadores atualizados!");
+    } catch (err) {
+      toast.error("❌ Erro ao enviar patrocinadores");
     }
-    await updateConfig.mutateAsync({ sponsors: newSponsors as unknown as Sponsor[] });
     setUploadingSponsor(false);
   };
 
@@ -122,29 +155,43 @@ const AdminHomePanel = () => {
             <LogOut className="h-4 w-4 mr-2" /> Sair do Admin
           </Button>
 
-          {/* Videos - 3 distinct */}
+          {/* Videos - 3 distinct with separate refs */}
           <section className="space-y-3">
             <h3 className="font-montserrat text-sm font-semibold text-foreground">📹 Vídeos da Home</h3>
             <div className="grid grid-cols-1 gap-3">
               {(["loop", "rules", "prize"] as const).map((type) => {
                 const url = type === "loop" ? config.video_loop_url : type === "rules" ? config.video_rules_url : config.video_prize_url;
                 const label = type === "loop" ? "🔄 Loop Auto (Topo)" : type === "rules" ? "📜 Regras" : "🏆 Prêmio";
+                const ref = getRef(type);
+                const selectedFile = selectedFiles[type];
                 return (
                   <div key={type} className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border">
                     <p className="text-xs font-medium text-foreground">{label}</p>
                     {url && <video src={url} controls className="w-full rounded-lg aspect-video object-cover" />}
-                    <input ref={type === "rules" ? rulesRef : prizeVideoRef} type="file" accept="video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleVideoUpload(f, type); }} />
+                    
+                    {/* Selected file indicator */}
+                    {selectedFile && (
+                      <div className="flex items-center gap-2 text-xs text-primary bg-primary/10 rounded-md px-2 py-1">
+                        <FileVideo className="h-3 w-3" />
+                        <span className="truncate">{selectedFile}</span>
+                        {uploadingVideo === type && <Loader2 className="h-3 w-3 animate-spin ml-auto" />}
+                      </div>
+                    )}
+
+                    <input 
+                      ref={ref} 
+                      type="file" 
+                      accept="video/*" 
+                      className="hidden" 
+                      onChange={(e) => { 
+                        const f = e.target.files?.[0]; 
+                        if (f) handleVideoUpload(f, type);
+                        // Reset input so same file can be selected again
+                        if (e.target) e.target.value = "";
+                      }} 
+                    />
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1" disabled={uploadingVideo === type} onClick={() => {
-                        if (type === "loop") {
-                          const input = document.createElement("input");
-                          input.type = "file";
-                          input.accept = "video/*";
-                          input.onchange = (ev) => { const f = (ev.target as HTMLInputElement).files?.[0]; if (f) handleVideoUpload(f, type); };
-                          input.click();
-                        } else if (type === "rules") rulesRef.current?.click();
-                        else prizeVideoRef.current?.click();
-                      }}>
+                      <Button variant="outline" size="sm" className="flex-1" disabled={uploadingVideo === type} onClick={() => ref.current?.click()}>
                         {uploadingVideo === type ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
                         {url ? "Substituir" : "Enviar"}
                       </Button>
@@ -152,6 +199,7 @@ const AdminHomePanel = () => {
                         <Button variant="destructive" size="sm" onClick={async () => {
                           const key = type === "loop" ? "video_loop_url" : type === "rules" ? "video_rules_url" : "video_prize_url";
                           await updateConfig.mutateAsync({ [key]: null });
+                          toast.success("Vídeo removido!");
                         }}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -188,7 +236,10 @@ const AdminHomePanel = () => {
                 ))}
               </div>
             )}
-            <input ref={sponsorRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { if (e.target.files?.length) handleSponsorUpload(e.target.files); }} />
+            <input ref={sponsorRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { 
+              if (e.target.files?.length) handleSponsorUpload(e.target.files);
+              if (e.target) e.target.value = "";
+            }} />
             <Button variant="outline" size="sm" disabled={uploadingSponsor} onClick={() => sponsorRef.current?.click()}>
               {uploadingSponsor ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
               Adicionar Patrocinadores
@@ -208,20 +259,23 @@ const AdminHomePanel = () => {
                 ))}
               </div>
             )}
-            <input ref={secondaryRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => { if (e.target.files?.length) handleSecondaryPrizeUpload(e.target.files); }} />
+            <input ref={secondaryRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => { 
+              if (e.target.files?.length) handleSecondaryPrizeUpload(e.target.files);
+              if (e.target) e.target.value = "";
+            }} />
             <Button variant="outline" size="sm" disabled={uploadingPrize} onClick={() => secondaryRef.current?.click()}>
               {uploadingPrize ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
               Adicionar Fotos/Vídeos
             </Button>
           </section>
 
-          {/* Promo Text 1 - After Top 10 */}
+          {/* Promo Text 1 */}
           <section className="space-y-3">
             <h3 className="font-montserrat text-sm font-semibold text-foreground">✏️ Texto 1 (após Top 10 / prêmios)</h3>
             <RichTextEditor content={promoText} onChange={setPromoText} />
           </section>
 
-          {/* Promo Text 2 - End of page */}
+          {/* Promo Text 2 */}
           <section className="space-y-3">
             <h3 className="font-montserrat text-sm font-semibold text-foreground">✏️ Texto 2 (final da página)</h3>
             <RichTextEditor content={promoText2} onChange={setPromoText2} />
