@@ -92,9 +92,12 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
         className="w-full h-full border-0"
         style={{ display: playing ? 'block' : 'none' }}
       />
-      {/* Block YouTube logo area (top-right) when playing */}
+      {/* Block YouTube logo area (top-right) + bottom-right fullscreen when playing */}
       {playing && (
-        <div className="absolute top-0 right-0 w-24 h-12 z-20" />
+        <>
+          <div className="absolute top-0 right-0 w-28 h-14 z-20 cursor-default" style={{ pointerEvents: 'auto' }} onClick={(e) => e.stopPropagation()} />
+          <div className="absolute bottom-0 right-0 w-12 h-12 z-20 cursor-default" style={{ pointerEvents: 'auto' }} onClick={(e) => e.stopPropagation()} />
+        </>
       )}
       {!playing && (
         <>

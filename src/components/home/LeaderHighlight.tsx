@@ -13,7 +13,7 @@ const LeaderHighlight = forwardRef<HTMLDivElement, LeaderHighlightProps>(
   ({ name, avatarUrl, likes }, ref) => {
   const formattedLikes = likes.toLocaleString("pt-BR");
   const navigate = useNavigate();
-  const slug = name.toLowerCase().replace(/\s+/g, '-');
+  const slug = name.toLowerCase().replace(/\s+/g, '').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
   return (
     <div ref={ref} onClick={() => navigate(`/@${slug}`)} className="relative flex flex-col items-center gap-4 p-6 md:p-8 cursor-pointer">
