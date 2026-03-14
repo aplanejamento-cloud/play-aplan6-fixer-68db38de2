@@ -106,6 +106,7 @@ const AdminHomePanel = () => {
       }
       await updateConfig.mutateAsync({ sponsors: newSponsors as unknown as Sponsor[] });
       toast.success("✅ Patrocinadores atualizados!");
+      setTimeout(() => navigate("/"), 1500);
     } catch (err) {
       toast.error("❌ Erro ao enviar patrocinadores");
     }
