@@ -22,6 +22,7 @@ import MimoModal from "@/components/MimoModal";
 import VideoPost from "./VideoPost";
 import PostModerationBar from "./PostModerationBar";
 import YouTubeEmbed, { extractYouTubeId } from "./YouTubeEmbed";
+import VideoEmbed, { extractVideoUrl } from "./VideoEmbed";
 import ChallengeDialog from "./ChallengeDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -230,8 +231,8 @@ const PostCard = ({ post }: PostCardProps) => {
           <div className="mt-2">
             <p className="text-foreground whitespace-pre-wrap break-words">
               {post.content.split(/(\s+)/).map((word, i) => {
-                if (/https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(word)) {
-                  return <span key={i} className="text-muted-foreground cursor-not-allowed">[link YouTube bloqueado]</span>;
+                if (/https?:\/\/(www\.)?(youtube\.com|youtu\.be|instagram\.com|tiktok\.com|kwai\.com|facebook\.com|fb\.watch)\//i.test(word)) {
+                  return <span key={i} className="text-muted-foreground cursor-not-allowed">[link bloqueado]</span>;
                 }
                 if (/https?:\/\/\S+/i.test(word)) {
                   return <span key={i} className="text-muted-foreground">{word}</span>;
@@ -239,9 +240,9 @@ const PostCard = ({ post }: PostCardProps) => {
                 return word;
               })}
             </p>
-            {extractYouTubeId(post.content) && (
+            {extractVideoUrl(post.content) && (
               <div className="mt-2">
-                <YouTubeEmbed url={post.content} />
+                <VideoEmbed url={extractVideoUrl(post.content)!.url} />
               </div>
             )}
           </div>
