@@ -22,6 +22,7 @@ import MimoModal from "@/components/MimoModal";
 import VideoPost from "./VideoPost";
 import PostModerationBar from "./PostModerationBar";
 import YouTubeEmbed, { extractYouTubeId } from "./YouTubeEmbed";
+import VideoEmbed, { extractVideoUrl } from "./VideoEmbed";
 import ChallengeDialog from "./ChallengeDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
