@@ -49,7 +49,7 @@ const GlobalNav = () => {
 
   const allItems = [
     { path: "/", label: "Home", icon: Home, requiresGame: false, requiresAuth: false },
-    { path: "/comprar-likes", label: "💰 Carregar Likes", icon: DollarSign, requiresGame: false, requiresAuth: true, lowLikes: true },
+    { path: "/comprar-likes", label: "Carregar Likes", icon: DollarSign, requiresGame: false, requiresAuth: true, lowLikes: true },
     { path: "/doacoes", label: "Doações", icon: Gift, requiresGame: false, requiresAuth: true },
     { path: "/patrocinador", label: "Patrocínio", icon: Crown, requiresGame: false, requiresAuth: false },
     { path: "/profile", label: "Perfil", icon: User, requiresGame: false, requiresAuth: true },
