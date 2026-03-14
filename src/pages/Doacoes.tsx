@@ -292,12 +292,12 @@ const DonationForm = () => {
           Endereço para retirada
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Input placeholder="Estado" value={estado} onChange={(e) => setEstado(e.target.value)} />
-          <Input placeholder="Cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} />
+          <Input placeholder="Estado *" value={estado} onChange={(e) => setEstado(e.target.value)} className={!estado.trim() ? "border-destructive/50" : ""} />
+          <Input placeholder="Cidade *" value={cidade} onChange={(e) => setCidade(e.target.value)} className={!cidade.trim() ? "border-destructive/50" : ""} />
           <Input placeholder="Bairro" value={bairro} onChange={(e) => setBairro(e.target.value)} />
-          <Input placeholder="Endereço (Rua)" value={endereco} onChange={(e) => setEndereco(e.target.value)} />
+          <Input placeholder="Endereço (Rua) *" value={endereco} onChange={(e) => setEndereco(e.target.value)} className={!endereco.trim() ? "border-destructive/50" : ""} />
           <Input placeholder="Número" value={numero} onChange={(e) => setNumero(e.target.value)} />
-          <Input placeholder="Complemento" value={complemento} onChange={(e) => setComplemento(e.target.value)} />
+          <Input placeholder="Complemento (opcional)" value={complemento} onChange={(e) => setComplemento(e.target.value)} />
         </div>
       </div>
 

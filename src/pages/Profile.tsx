@@ -28,6 +28,7 @@ import AppHeader from "@/components/AppHeader";
 import InviteButton from "@/components/InviteButton";
 import PostCard from "@/components/feed/PostCard";
 import UnifiedEditorModal from "@/components/feed/UnifiedEditorModal";
+import AvatarCropDialog from "@/components/AvatarCropDialog";
 import StreakBadge from "@/components/retention/StreakBadge";
 
 const Profile = () => {

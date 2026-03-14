@@ -318,7 +318,7 @@ const UnifiedEditorModal = ({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) resetAll(); onOpenChange(v); }}>
-      <DialogContent className="max-w-lg w-[95vw] max-h-[90vh] overflow-y-auto bg-background/95 backdrop-blur-xl p-4 gap-3">
+      <DialogContent className="max-w-lg w-[95vw] max-h-[90vh] overflow-hidden flex flex-col bg-background/95 backdrop-blur-xl p-4 gap-3">
         <DialogTitle className="font-cinzel text-lg text-center">
           {isAvatar ? "Editar Avatar" : "Editor"} <span className="text-primary">PlayLike</span> ✨
         </DialogTitle>
