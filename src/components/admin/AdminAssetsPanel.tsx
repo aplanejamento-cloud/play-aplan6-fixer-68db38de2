@@ -61,7 +61,10 @@ const AdminAssetsPanel = () => {
               <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Título..." className="flex-1" />
             </div>
             <div className="flex gap-2">
-              <input ref={fileRef} type="file" className="hidden" />
+              <input ref={fileRef} type="file" className="hidden" onChange={handleFileChange} />
+              {selectedFileName && (
+                <p className="text-xs text-primary truncate">📎 {selectedFileName}</p>
+              )}
               <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
                 <Upload className="w-4 h-4 mr-1" /> Arquivo
               </Button>
