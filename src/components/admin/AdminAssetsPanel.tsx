@@ -3,6 +3,7 @@ import { useAssets, useUploadAsset, useDeleteAsset } from "@/hooks/useAssetsMark
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { FolderDown, ChevronDown, ChevronUp, Upload, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
