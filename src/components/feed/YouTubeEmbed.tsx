@@ -89,27 +89,30 @@ const YouTubeEmbed = ({ url }: YouTubeEmbedProps) => {
         title="YouTube video"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
         allowFullScreen={false}
-        className="w-full h-full border-0 pointer-events-none"
+        className="w-full h-full border-0"
         style={{ display: playing ? 'block' : 'none' }}
       />
-      {!playing && (
-        <img
-          src={thumbnailUrl}
-          alt="YouTube video thumbnail"
-          className="w-full h-full object-cover"
-        />
+      {/* Block YouTube logo area (top-right) when playing */}
+      {playing && (
+        <div className="absolute top-0 right-0 w-24 h-12 z-20" />
       )}
-      {/* Overlay for play/pause control */}
-      <div
-        onClick={handleToggle}
-        className="absolute inset-0 cursor-pointer flex items-center justify-center z-10"
-      >
-        {!playing && (
-          <div className="bg-black/70 rounded-full p-5 text-white hover:bg-black/90 transition-colors shadow-lg">
-            <Play className="w-10 h-10 fill-white" />
+      {!playing && (
+        <>
+          <img
+            src={thumbnailUrl}
+            alt="YouTube video thumbnail"
+            className="w-full h-full object-cover"
+          />
+          <div
+            onClick={handleToggle}
+            className="absolute inset-0 cursor-pointer flex items-center justify-center z-10"
+          >
+            <div className="bg-black/70 rounded-full p-5 text-white hover:bg-black/90 transition-colors shadow-lg">
+              <Play className="w-10 h-10 fill-white" />
+            </div>
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 };
