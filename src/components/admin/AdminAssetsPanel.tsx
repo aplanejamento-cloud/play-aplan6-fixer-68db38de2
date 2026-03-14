@@ -99,7 +99,7 @@ const AdminAssetsPanel = () => {
                   <FolderDown className="w-4 h-4" />
                 </Button>
               </a>
-              <Button size="sm" variant="destructive" onClick={() => deleteAsset.mutate(a.id)}>
+              <Button size="sm" variant="destructive" onClick={() => { if (window.confirm("Excluir este asset permanentemente?")) deleteAsset.mutate(a.id); }}>
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>

@@ -133,7 +133,7 @@ const AdminTemasPanel = () => {
               >
                 {t.ativo ? "Ativo" : "Off"}
               </Button>
-              <Button size="sm" variant="destructive" onClick={() => deleteTema.mutate({ id: t.id })}>
+              <Button size="sm" variant="destructive" onClick={() => { if (window.confirm("Excluir este tema permanentemente?")) deleteTema.mutate({ id: t.id }); }}>
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>

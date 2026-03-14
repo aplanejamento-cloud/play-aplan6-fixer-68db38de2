@@ -162,13 +162,14 @@ const VideoEmbed = ({ url }: VideoEmbedProps) => {
         style={{ display: isYouTube && !started ? "none" : "block" }}
       />
 
-      {/* CLICK BLOCKER - prevents navigating away */}
+      {/* CLICK BLOCKER - prevents navigating away (always active) */}
       <div
         className="absolute inset-0 z-10 bg-transparent"
         onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
-        onMouseDown={(e) => e.stopPropagation()}
-        onTouchStart={(e) => e.stopPropagation()}
-        style={{ pointerEvents: started && !isYouTube ? "none" : "auto" }}
+        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+        onTouchStart={(e) => { e.stopPropagation(); e.preventDefault(); }}
+        onDoubleClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+        style={{ pointerEvents: "auto" }}
       />
 
       {/* YouTube: thumbnail + play button before started */}
