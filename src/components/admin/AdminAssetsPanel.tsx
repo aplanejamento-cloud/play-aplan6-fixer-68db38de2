@@ -15,16 +15,25 @@ const AdminAssetsPanel = () => {
   const [titulo, setTitulo] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const [selectedFileName, setSelectedFileName] = useState("");
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    setSelectedFileName(f ? f.name : "");
+  };
+
   const handleUpload = async () => {
     const file = fileRef.current?.files?.[0];
     if (!file) { toast.error("Selecione um arquivo"); return; }
+    toast.info(`Enviando ${file.name}...`);
     try {
       await upload.mutateAsync({ file, tipo, titulo: titulo || undefined });
-      toast.success("Asset enviado!");
+      toast.success("✅ Asset enviado!");
       setTitulo("");
+      setSelectedFileName("");
       if (fileRef.current) fileRef.current.value = "";
-    } catch {
-      toast.error("Erro ao enviar");
+    } catch (err) {
+      toast.error(`❌ Erro: ${err instanceof Error ? err.message : "falha no upload"}`);
     }
   };
 
