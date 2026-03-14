@@ -264,38 +264,48 @@ const VideoEmbed = ({ url }: VideoEmbedProps) => {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div ref={containerRef} className="relative w-full aspect-video rounded-lg overflow-hidden bg-black">
-      {/* IFRAME */}
+    <div ref={containerRef} className="relative w-full aspect-video rounded-2xl overflow-hidden bg-black">
+      {/* IFRAME - always behind (z-0) */}
       <iframe
         ref={iframeRef}
         src={isYouTube ? (playing ? `${embedUrl}&autoplay=1` : embedUrl) : embedUrl}
         title={`${PLATFORM_LABELS[platform]} video`}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
-        allowFullScreen={false}
-        className="w-full h-full border-0"
+        allowFullScreen
+        className="w-full h-full border-0 rounded-2xl z-0 relative"
         style={{
           display: isYouTube && !playing ? "none" : "block",
         }}
       />
 
-      {/* Block external links overlay */}
+      {/* FULL CLICK BLOCKER - prevents navigating away */}
+      {playing && (
+        <div
+          className="absolute inset-0 z-[5]"
+          onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+        />
+      )}
+
+      {/* Block external links overlay - platform logos */}
       {(playing || !isYouTube) && (
         <>
           <div
-            className="absolute top-0 right-0 w-28 h-14 z-20 cursor-default"
+            className="absolute top-0 right-0 w-28 h-14 z-30 cursor-default"
             style={{ pointerEvents: "auto" }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
           />
           <div
-            className="absolute bottom-0 right-0 w-12 h-12 z-20 cursor-default"
+            className="absolute bottom-0 right-0 w-12 h-12 z-30 cursor-default"
             style={{ pointerEvents: "auto" }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
           />
           {!isYouTube && (
             <div
-              className="absolute top-0 left-0 w-28 h-14 z-20 cursor-default"
+              className="absolute top-0 left-0 w-28 h-14 z-30 cursor-default"
               style={{ pointerEvents: "auto" }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
             />
           )}
         </>
@@ -320,78 +330,69 @@ const VideoEmbed = ({ url }: VideoEmbedProps) => {
         </>
       )}
 
-      {/* UNIVERSAL CONTROLS BAR */}
+      {/* CONTROL BUTTONS - floating above video (z-20) */}
       {playing && (
-        <div className="absolute bottom-0 left-0 right-0 z-30 space-y-1 p-2 bg-black/80 backdrop-blur-sm">
-          {/* PROGRESS BAR - YouTube only */}
+        <div className="absolute bottom-20 left-4 right-4 mx-2 flex items-center gap-3 bg-black/80 backdrop-blur-sm p-3 rounded-2xl z-20">
           {isYouTube && (
-            <div className="flex items-center gap-2 text-white">
-              <span className="w-10 text-[10px] text-white/70 font-mono text-right tabular-nums">
-                {formatTime(currentTime)}
-              </span>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                step="0.1"
-                value={progress}
-                onChange={handleProgressChange}
-                className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer bg-white/20
-                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 
-                  [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-500 [&::-webkit-slider-thumb]:shadow-md
-                  [&::-webkit-slider-thumb]:hover:scale-125 [&::-webkit-slider-thumb]:transition-transform
-                  [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full 
-                  [&::-moz-range-thumb]:bg-red-500 [&::-moz-range-thumb]:border-0"
-                style={{
-                  background: `linear-gradient(to right, #ef4444 ${progress}%, rgba(255,255,255,0.2) ${progress}%)`,
-                }}
-              />
-              <span className="w-10 text-[10px] text-white/70 font-mono tabular-nums">
-                {formatTime(duration)}
-              </span>
-            </div>
+            <button
+              onClick={() => handleSeek(-15)}
+              className="p-2 text-xl text-white hover:bg-white/20 rounded-xl transition-colors"
+              title="-15s"
+            >
+              ⏪
+            </button>
           )}
 
-          {/* BUTTONS - universal */}
-          <div className="flex items-center justify-center gap-1">
-            {/* ±15s - YouTube only */}
-            {isYouTube && (
-              <button
-                onClick={() => handleSeek(-15)}
-                className="p-1.5 rounded text-white/70 hover:text-white transition-colors"
-                title="-15s"
-              >
-                <SkipBack className="w-4 h-4" />
-              </button>
-            )}
+          <button
+            onClick={handleToggle}
+            className="p-3 text-3xl text-white hover:bg-white/20 rounded-2xl transition-colors"
+          >
+            {playing ? "⏸️" : "▶️"}
+          </button>
 
+          {isYouTube && (
             <button
-              onClick={handleToggle}
-              className="p-2 rounded-full text-white hover:bg-white/10 transition-colors"
+              onClick={() => handleSeek(15)}
+              className="p-2 text-xl text-white hover:bg-white/20 rounded-xl transition-colors"
+              title="+15s"
             >
-              {playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 fill-white" />}
+              ⏩
             </button>
+          )}
 
-            {isYouTube && (
-              <button
-                onClick={() => handleSeek(15)}
-                className="p-1.5 rounded text-white/70 hover:text-white transition-colors"
-                title="+15s"
-              >
-                <SkipForward className="w-4 h-4" />
-              </button>
-            )}
+          <button
+            onClick={handleMute}
+            className="ml-auto p-2 text-xl text-white hover:bg-white/20 rounded-xl transition-colors"
+          >
+            {muted ? "🔇" : "🔊"}
+          </button>
+        </div>
+      )}
 
-            {/* Mute - YouTube only (other platforms don't support API) */}
-            {isYouTube && (
-              <button
-                onClick={handleMute}
-                className="p-1.5 rounded text-white/70 hover:text-white transition-colors ml-2"
-              >
-                {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-              </button>
-            )}
+      {/* PROGRESS BAR - bottom, YouTube only (z-10) */}
+      {playing && isYouTube && (
+        <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/95 to-transparent z-10">
+          <div className="flex text-xs text-white mb-2">
+            <span>{formatTime(currentTime)}</span>
+            <span className="ml-auto">{formatTime(duration)}</span>
           </div>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            step="0.1"
+            value={progress}
+            onChange={handleProgressChange}
+            className="w-full h-2 rounded-full appearance-none cursor-pointer bg-white/20
+              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
+              [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:shadow-md
+              [&::-webkit-slider-thumb]:hover:scale-125 [&::-webkit-slider-thumb]:transition-transform
+              [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full
+              [&::-moz-range-thumb]:bg-red-600 [&::-moz-range-thumb]:border-0"
+            style={{
+              background: `linear-gradient(to right, #dc2626 ${progress}%, rgba(255,255,255,0.2) ${progress}%)`,
+            }}
+          />
         </div>
       )}
 
