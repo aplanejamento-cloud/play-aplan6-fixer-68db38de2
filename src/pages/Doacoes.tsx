@@ -273,16 +273,18 @@ const DonationForm = () => {
         </div>
       </div>
 
-      <div>
-        <label className="text-xs text-muted-foreground mb-1 block">Prateleira</label>
-        <Select value={prateleira} onValueChange={(v) => setPrateleira(v as "1" | "2")}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {isAdmin && <SelectItem value="1">🏆 Prêmios Maiores</SelectItem>}
-            <SelectItem value="2">📍 Retirada Local Doador</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {isAdmin && (
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Prateleira</label>
+          <Select value={prateleira} onValueChange={(v) => setPrateleira(v as "1" | "2")}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">🏆 Prêmios Maiores</SelectItem>
+              <SelectItem value="2">📍 Retirada Local Doador</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <div className="space-y-3 border-t border-border pt-4">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
