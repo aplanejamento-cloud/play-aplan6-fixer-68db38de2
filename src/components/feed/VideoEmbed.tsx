@@ -113,7 +113,7 @@ const VideoEmbed = ({ url }: VideoEmbedProps) => {
     };
   }, [instanceId, sendYTCommand]);
 
-  // Pause when out of viewport
+  // Auto-pause when out of viewport, auto-play when back
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -121,13 +121,16 @@ const VideoEmbed = ({ url }: VideoEmbedProps) => {
       ([entry]) => {
         if (!entry.isIntersecting) {
           sendYTCommand("pauseVideo");
+        } else if (started && isYouTube) {
+          // Resume playback when scrolling back into view
+          sendYTCommand("playVideo");
         }
       },
       { threshold: 0.5 }
     );
     observer.observe(container);
     return () => observer.disconnect();
-  }, [sendYTCommand]);
+  }, [sendYTCommand, started, isYouTube]);
 
   // Pause on tab visibility change
   useEffect(() => {
