@@ -86,6 +86,7 @@ const AdminHomePanel = () => {
       }
       await updateConfig.mutateAsync({ secondary_prizes: newPrizes as unknown as SecondaryPrize[] });
       toast.success("✅ Prêmios secundários atualizados!");
+      setTimeout(() => navigate("/"), 1500);
     } catch (err) {
       toast.error("❌ Erro ao enviar prêmios");
     }
