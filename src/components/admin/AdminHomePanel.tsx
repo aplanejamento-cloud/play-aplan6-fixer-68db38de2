@@ -60,6 +60,7 @@ const AdminHomePanel = () => {
         await updateConfig.mutateAsync({ [key]: url });
         toast.success(`✅ Vídeo ${type} enviado com sucesso!`);
         setSelectedFiles(prev => { const n = { ...prev }; delete n[type]; return n; });
+        setTimeout(() => navigate("/"), 1500);
       } else {
         toast.error(`❌ Falha ao enviar vídeo ${type}`);
       }
