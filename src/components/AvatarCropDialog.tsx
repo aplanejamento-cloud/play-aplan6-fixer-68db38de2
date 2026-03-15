@@ -71,26 +71,28 @@ const AvatarCropDialog = ({ open, onOpenChange, imageSrc, onCropComplete }: Avat
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-border max-w-md">
-        <DialogHeader>
+      <DialogContent className="bg-card border-border w-[90vw] max-w-[90vw] max-h-[90vh] flex flex-col p-4">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="font-cinzel text-foreground">Recortar Foto de Perfil</DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col items-center gap-4">
-          <ReactCrop
-            crop={crop}
-            onChange={(c) => setCrop(c)}
-            onComplete={(c) => setCompletedCrop(c)}
-            aspect={1}
-            circularCrop
-          >
-            <img
-              ref={imgRef}
-              src={imageSrc}
-              alt="Crop"
-              className="max-h-[60vh] max-w-full"
-            />
-          </ReactCrop>
-          <div className="flex gap-2 w-full">
+        <div className="flex-1 min-h-0 flex flex-col items-center gap-3 overflow-hidden">
+          <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden w-full">
+            <ReactCrop
+              crop={crop}
+              onChange={(c) => setCrop(c)}
+              onComplete={(c) => setCompletedCrop(c)}
+              aspect={1}
+              circularCrop
+            >
+              <img
+                ref={imgRef}
+                src={imageSrc}
+                alt="Crop"
+                style={{ maxHeight: "calc(90vh - 160px)", maxWidth: "100%", objectFit: "contain" }}
+              />
+            </ReactCrop>
+          </div>
+          <div className="flex gap-2 w-full flex-shrink-0">
             <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
