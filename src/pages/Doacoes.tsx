@@ -16,155 +16,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { sendWhatsAppDoador } from "@/services/WhatsAppService";
-
-// ─── Donor Ticket Verification with Likes Transfer ────────
-const TicketVerifier = ({ doacaoId, doacaoUserId, likesRecebidos }: { doacaoId: string; doacaoUserId: string; likesRecebidos: number }) => {
-  const { user } = useAuth();
-  const [code, setCode] = useState("");
-  const [verifying, setVerifying] = useState(false);
-  const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
-  const qc = useQueryClient();
-
-  const handleVerify = async () => {
-    if (code.length !== 6) { toast.error("Digite o código de 6 dígitos"); return; }
-    setVerifying(true);
-    setResult(null);
-    try {
-      // Find resgate by ticket code
-      const { data: resgate, error: rErr } = await supabase
-        .from("resgates")
-        .select("*")
-        .eq("codigo_ticket", code)
-        .maybeSingle();
-
-      if (rErr || !resgate) {
-        setResult({ success: false, message: "Senha inválida" });
-        toast.error("Senha inválida");
-        setVerifying(false);
-        return;
-      }
-
-      if (resgate.likes_transferidos) {
-        setResult({ success: false, message: "Já transferido anteriormente" });
-        toast.error("Já transferido");
-        setVerifying(false);
-        return;
-      }
-
-      const claimedUserId = resgate.usuario_id;
-      const likesGastos = resgate.likes_gastos || likesRecebidos;
-
-      // Check claimed user has enough likes
-      const { data: claimedUser } = await supabase
-        .from("profiles")
-        .select("total_likes, user_id")
-        .eq("user_id", claimedUserId)
-        .single();
-
-      if (!claimedUser || claimedUser.total_likes! < likesGastos) {
-        setResult({ success: false, message: "Usuário sem likes suficientes" });
-        toast.error("Usuário sem likes suficientes");
-        setVerifying(false);
-        return;
-      }
-
-      // Get doador profile
-      const { data: doador } = await supabase
-        .from("profiles")
-        .select("total_likes, user_id")
-        .eq("user_id", doacaoUserId)
-        .single();
-
-      if (!doador) {
-        setResult({ success: false, message: "Doador não encontrado" });
-        setVerifying(false);
-        return;
-      }
-
-      // Transfer likes: user -> doador
-      await supabase.from("profiles")
-        .update({ total_likes: doador!.total_likes! + likesGastos })
-        .eq("user_id", doacaoUserId);
-
-      await supabase.from("profiles")
-        .update({ total_likes: claimedUser.total_likes! - likesGastos })
-        .eq("user_id", claimedUserId);
-
-      // Mark resgate as transferred
-      await supabase.from("resgates")
-        .update({ likes_transferidos: true, status: "Aprovado e entregue" })
-        .eq("id", resgate.id);
-
-      // Decrement stock now that doador verified
-      const premioId = resgate.premio_id;
-      if (premioId) {
-        const { data: premio } = await supabase.from("premios").select("estoque").eq("id", premioId).single();
-        if (premio) {
-          await supabase.from("premios").update({ estoque: Math.max(0, premio.estoque! - 1) }).eq("id", premioId);
-        }
-      }
-
-      // Get premio title for notification
-      const { data: premioData } = await supabase.from("premios").select("titulo").eq("id", premioId).single();
-      const premioTitulo = premioData?.titulo || "prêmio";
-
-      // Notify donor they received likes
-      await supabase.from("notifications").insert({
-        user_id: doacaoUserId,
-        tipo: "premio",
-        from_user_id: claimedUserId,
-        mensagem: `🎉 Você recebeu ${likesGastos} likes da sua ${premioTitulo}!`,
-      });
-
-      // WhatsApp notification to donor (best-effort)
-      const { data: doadorProfile } = await supabase
-        .from("profiles")
-        .select("whatsapp")
-        .eq("user_id", doacaoUserId)
-        .single();
-
-      const whatsappSent = await sendWhatsAppDoador(
-        doadorProfile?.whatsapp || null,
-        likesGastos,
-        premioTitulo
-      );
-
-      qc.invalidateQueries({ queryKey: ["minhas_doacoes"] });
-      qc.invalidateQueries({ queryKey: ["premios"] });
-      setResult({ success: true, message: `✅ Likes transferidos! +${likesGastos} likes para você.` });
-      toast.success(`🎉 +${likesGastos} likes${whatsappSent ? " + WhatsApp enviado" : ""}! Estoque -1`);
-    } catch (e: any) {
-      setResult({ success: false, message: e.message || "Erro ao verificar" });
-      toast.error("Erro ao verificar ticket");
-    }
-    setVerifying(false);
-  };
-
-  return (
-    <div className="mt-2 space-y-2">
-      <div className="flex gap-2">
-        <Input
-          placeholder="Senha 6 dígitos"
-          value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-          maxLength={6}
-          className="font-mono text-center text-lg tracking-widest"
-        />
-        <Button size="sm" onClick={handleVerify} disabled={verifying || code.length !== 6}>
-          {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-        </Button>
-      </div>
-      {result && (
-        <p className={cn("text-xs font-medium", result.success ? "text-green-500" : "text-destructive")}>
-          {result.message}
-          {!result.success && result.message !== "Já transferido anteriormente" && (
-            <span className="block text-destructive font-bold mt-1">⚠️ NÃO entregue o produto!</span>
-          )}
-        </p>
-      )}
-    </div>
-  );
-};
+import { ESTADOS_BR, CIDADES_BR } from "@/data/estadosCidades";
+import TicketVerifier from "@/components/doacoes/TicketVerifier";
 
 // ─── Donation Form ────────────────────────────────────────
 const DonationForm = () => {
@@ -190,19 +43,29 @@ const DonationForm = () => {
   const [whatsapp, setWhatsapp] = useState("");
   const [videoUploading, setVideoUploading] = useState(false);
 
-    const doarMutation = useMutation({
+  const cidadesDoEstado = estado ? (CIDADES_BR[estado] || []) : [];
+
+  const doarMutation = useMutation({
     mutationFn: async () => {
       if (!user || !selectedFile) throw new Error("Arquivo obrigatório");
-      if (!whatsapp.trim()) throw new Error("WhatsApp é obrigatório");
-      // Required fields validation
-      if (!estado.trim() || !cidade.trim() || !endereco.trim()) throw new Error("Preencha estado, cidade e endereço (obrigatórios)");
+      if (!titulo.trim()) throw new Error("Título é obrigatório");
+      if (!descricao.trim()) throw new Error("Descrição é obrigatória");
+      if (!whatsapp.trim() || !/^\d{2}\s?9?\d{4}-?\d{4}$/.test(whatsapp)) throw new Error("WhatsApp inválido");
+      if (!estado) throw new Error("Selecione o estado");
+      if (!cidade) throw new Error("Selecione a cidade");
+      if (!bairro.trim()) throw new Error("Bairro é obrigatório");
+      if (!endereco.trim()) throw new Error("Endereço é obrigatório");
+      if (!numero.trim()) throw new Error("Número é obrigatório");
+      if (likesRecebidos < 1) throw new Error("Likes deve ser no mínimo 1");
+      if (quantidade < 1) throw new Error("Quantidade deve ser no mínimo 1");
+
       const url = await upload(selectedFile);
       if (!url) throw new Error("Falha no upload");
       const { error } = await supabase.from("doacoes_premios").insert({
-        usuario_id: user.id, midia_url: url, titulo: titulo || null, descricao: descricao || null,
+        usuario_id: user.id, midia_url: url, titulo, descricao,
         likes_recebidos: likesRecebidos, tipo_prateleira: Number(prateleira), aprovado: false, quantidade,
-        estado: estado || null, cidade: cidade || null, bairro: bairro || null,
-        endereco: endereco || null, numero: numero || null, complemento: complemento || null,
+        estado, cidade, bairro,
+        endereco, numero, complemento: complemento || null,
       });
       if (error) throw error;
     },
@@ -226,6 +89,8 @@ const DonationForm = () => {
       setTimeout(() => setVideoUploading(false), 500);
     }
   };
+
+  const isFormValid = !!selectedFile && !!titulo.trim() && !!descricao.trim() && !!whatsapp.trim() && /^\d{2}\s?9?\d{4}-?\d{4}$/.test(whatsapp) && !!estado && !!cidade && !!bairro.trim() && !!endereco.trim() && !!numero.trim();
 
   return (
     <Card className="p-4 space-y-4 border-primary/20">
@@ -253,22 +118,22 @@ const DonationForm = () => {
         <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileChange} />
       </div>
 
-      <Input placeholder="Título do prêmio (opcional)" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
+      <Input placeholder="Título do prêmio *" value={titulo} onChange={(e) => setTitulo(e.target.value)} className={!titulo.trim() ? "border-destructive/50" : ""} />
+      <Input placeholder="Descrição *" value={descricao} onChange={(e) => setDescricao(e.target.value)} className={!descricao.trim() ? "border-destructive/50" : ""} />
       <div>
         <Input placeholder="WhatsApp (11 99999-9999) *" type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className={whatsapp && !/^\d{2}\s?9?\d{4}-?\d{4}$/.test(whatsapp) ? "border-destructive" : !whatsapp.trim() ? "border-destructive/50" : ""} />
         {whatsapp && !/^\d{2}\s?9?\d{4}-?\d{4}$/.test(whatsapp) && (
           <p className="text-xs text-destructive mt-1">WhatsApp inválido (ex: 11 99999-9999)</p>
         )}
       </div>
-      <Input placeholder="Descrição (opcional)" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
 
       <div className="flex gap-3">
         <div className="flex-1">
-          <label className="text-xs text-muted-foreground mb-1 block">Likes que você quer receber</label>
+          <label className="text-xs text-muted-foreground mb-1 block">Likes que você quer receber *</label>
           <Input type="number" min={1} value={likesRecebidos} onChange={(e) => setLikesRecebidos(Number(e.target.value))} />
         </div>
         <div className="w-28">
-          <label className="text-xs text-muted-foreground mb-1 block">Quantidade</label>
+          <label className="text-xs text-muted-foreground mb-1 block">Quantidade *</label>
           <Input type="number" min={1} value={quantidade} onChange={(e) => setQuantidade(Number(e.target.value))} />
         </div>
       </div>
@@ -292,20 +157,45 @@ const DonationForm = () => {
           Endereço para retirada
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Input placeholder="Estado *" value={estado} onChange={(e) => setEstado(e.target.value)} className={!estado.trim() ? "border-destructive/50" : ""} />
-          <Input placeholder="Cidade *" value={cidade} onChange={(e) => setCidade(e.target.value)} className={!cidade.trim() ? "border-destructive/50" : ""} />
-          <Input placeholder="Bairro" value={bairro} onChange={(e) => setBairro(e.target.value)} />
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Estado *</label>
+            <Select value={estado} onValueChange={(v) => { setEstado(v); setCidade(""); }}>
+              <SelectTrigger className={!estado ? "border-destructive/50" : ""}>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                {ESTADOS_BR.map((e) => (
+                  <SelectItem key={e.uf} value={e.uf}>{e.uf} - {e.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Cidade *</label>
+            <Select value={cidade} onValueChange={setCidade} disabled={!estado}>
+              <SelectTrigger className={!cidade && estado ? "border-destructive/50" : ""}>
+                <SelectValue placeholder={estado ? "Selecione" : "Escolha estado"} />
+              </SelectTrigger>
+              <SelectContent>
+                {cidadesDoEstado.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Input placeholder="Bairro *" value={bairro} onChange={(e) => setBairro(e.target.value)} className={!bairro.trim() ? "border-destructive/50" : ""} />
           <Input placeholder="Endereço (Rua) *" value={endereco} onChange={(e) => setEndereco(e.target.value)} className={!endereco.trim() ? "border-destructive/50" : ""} />
-          <Input placeholder="Número" value={numero} onChange={(e) => setNumero(e.target.value)} />
+          <Input placeholder="Número *" value={numero} onChange={(e) => setNumero(e.target.value)} className={!numero.trim() ? "border-destructive/50" : ""} />
           <Input placeholder="Complemento (opcional)" value={complemento} onChange={(e) => setComplemento(e.target.value)} />
         </div>
       </div>
 
       <p className="text-xs text-muted-foreground italic">💡 Doe um prêmio → receba likes quando aprovado e quando entregue ao usuário! Retire no endereço do doador.</p>
+      <p className="text-xs text-destructive/70">* Campos obrigatórios (exceto complemento)</p>
 
       <Button
         className="w-full font-cinzel font-bold"
-        disabled={!selectedFile || !whatsapp.trim() || !/^\d{2}\s?9?\d{4}-?\d{4}$/.test(whatsapp) || doarMutation.isPending || uploading}
+        disabled={!isFormValid || doarMutation.isPending || uploading}
         onClick={() => doarMutation.mutate()}
       >
         {doarMutation.isPending || uploading ? (

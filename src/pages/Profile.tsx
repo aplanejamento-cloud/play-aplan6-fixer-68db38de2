@@ -192,26 +192,24 @@ const Profile = () => {
   const [photoCropSrc, setPhotoCropSrc] = useState<string | null>(null);
   const [showPhotoCrop, setShowPhotoCrop] = useState(false);
 
+  const [photoEditorSrc, setPhotoEditorSrc] = useState<string | null>(null);
+  const [showPhotoEditor, setShowPhotoEditor] = useState(false);
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { toast.error("Máximo 5MB!"); return; }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPhotoCropSrc(reader.result as string);
-      setShowPhotoCrop(true);
-    };
-    reader.readAsDataURL(file);
+    // Open editor directly with the selected photo
+    setPhotoEditorSrc(URL.createObjectURL(file));
+    setShowPhotoEditor(true);
     e.target.value = "";
   };
 
-  const handlePhotoCropComplete = useCallback(async (blob: Blob) => {
-    setShowPhotoCrop(false);
-    setUploading(true);
-    const file = new File([blob], `photo-${Date.now()}.jpg`, { type: "image/jpeg" });
-    await uploadMedia(file, "photo");
-    setUploading(false);
-  }, [uploadMedia]);
+  const handlePhotoEditorPost = useCallback(() => {
+    // After posting from editor, close and refresh
+    setShowPhotoEditor(false);
+    setPhotoEditorSrc(null);
+  }, []);
 
   const [videoUploading, setVideoUploading] = useState(false);
 
