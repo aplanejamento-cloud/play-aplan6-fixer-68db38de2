@@ -716,13 +716,12 @@ const Profile = () => {
           onCropComplete={handleCropComplete}
         />
 
-        {/* Photo Editor - centered modal */}
+        {/* Photo Editor - opens directly with selected photo */}
         <UnifiedEditorModal
-          open={showPhotoCrop}
-          onOpenChange={setShowPhotoCrop}
-          mode="avatar"
-          initialImage={photoCropSrc || undefined}
-          onAvatarComplete={handlePhotoCropComplete}
+          open={showPhotoEditor}
+          onOpenChange={(v) => { setShowPhotoEditor(v); if (!v) setPhotoEditorSrc(null); }}
+          mode="post"
+          initialImage={photoEditorSrc || undefined}
         />
 
         {/* Avatar Zoom Modal */}
