@@ -332,18 +332,7 @@ const PostCard = ({ post }: PostCardProps) => {
             </button>
           )}
           
-          {/* Desafios link */}
-          {user && (
-            <button
-              onClick={() => navigate("/desafios-juiz")}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-muted/50 text-muted-foreground hover:bg-muted transition-all"
-            >
-              <Gavel className="w-4 h-4" />
-              <span className="hidden sm:inline">Desafios</span>
-            </button>
-          )}
-          
-          {/* Fiz isso! button for desafio posts - only non-juiz users */}
+          {/* Fiz isso! button - ONLY on desafio posts, non-juiz users */}
           {isDesafioPost && user && !isOwnPost && profile?.user_type !== "juiz" && (
             <button
               onClick={() => navigate(`/desafios-juiz`)}

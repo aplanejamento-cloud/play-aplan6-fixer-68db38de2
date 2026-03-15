@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Swords, Heart, Gem, Clock,
-  CheckCircle, XCircle, Crown, Skull, Timer,
+  CheckCircle, XCircle, Crown, Skull, Timer, Search,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
@@ -17,6 +17,7 @@ import InviteButton from "@/components/InviteButton";
 import { toast } from "sonner";
 import ChallengeDialog from "@/components/feed/ChallengeDialog";
 import { differenceInDays, addDays } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const Duels = () => {
   const navigate = useNavigate();
@@ -28,7 +29,18 @@ const Duels = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   const [showChallengeDialog, setShowChallengeDialog] = useState(false);
+  const [feedTab, setFeedTab] = useState<"ativos" | "finalizados">("ativos");
+  const [feedSearch, setFeedSearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const isJuiz = profile?.user_type === "juiz";
+
+  // User already in active duel?
+  const userInActiveDuel = duels.some(
+    (d) =>
+      (d.challenger_id === user?.id || d.challenged_id === user?.id) &&
+      (d.status === "pending" || d.status === "active")
+  );
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -75,6 +87,8 @@ const Duels = () => {
 
   const handleOpenChallenge = () => {
     if (!selectedPlayer) return;
+    if (isJuiz) { toast.error("Juízes não podem desafiar!"); return; }
+    if (userInActiveDuel) { toast.error("Você já tem um duelo ativo! Finalize antes."); return; }
     setShowChallengeDialog(true);
   };
 
@@ -130,6 +144,26 @@ const Duels = () => {
     );
   };
 
+  // Filter duels into sections
+  const matchesSearch = (d: Duel) => {
+    if (!feedSearch.trim()) return true;
+    const q = feedSearch.toLowerCase();
+    return (
+      d.challenger_profile?.name?.toLowerCase().includes(q) ||
+      d.challenged_profile?.name?.toLowerCase().includes(q)
+    );
+  };
+
+  const duelosAtivos = duels
+    .filter((d) => ["pending", "active"].includes(d.status) && matchesSearch(d));
+
+  const duelosFinalizados = duels
+    .filter((d) => ["completed", "refused"].includes(d.status) && matchesSearch(d));
+
+  const displayedDuels = feedTab === "ativos" ? duelosAtivos : duelosFinalizados;
+
+  const challengeDisabled = isJuiz || userInActiveDuel;
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
@@ -146,17 +180,26 @@ const Duels = () => {
         <Card className="bg-card/80 border-border">
           <CardContent className="py-4 space-y-3">
             <h3 className="font-cinzel text-sm text-primary">⚔️ Desafiar Jogador</h3>
+
+            {isJuiz && (
+              <p className="text-xs text-destructive">⚖️ Juízes não podem criar duelos.</p>
+            )}
+            {userInActiveDuel && !isJuiz && (
+              <p className="text-xs text-destructive">⚠️ Você já tem um duelo ativo. Finalize antes de iniciar outro.</p>
+            )}
+
             <div className="relative" ref={dropdownRef}>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Buscar jogador..."
+                  placeholder={challengeDisabled ? "Bloqueado" : "Buscar jogador..."}
                   value={searchName}
                   onChange={(e) => { setSearchName(e.target.value); setSelectedPlayer(null); }}
                   className="bg-input border-border"
+                  disabled={challengeDisabled}
                 />
                 <Button
                   onClick={handleOpenChallenge}
-                  disabled={!selectedPlayer}
+                  disabled={!selectedPlayer || challengeDisabled}
                   className="bg-primary text-primary-foreground"
                 >
                   <Swords className="w-4 h-4 mr-1" /> Desafiar
@@ -268,18 +311,56 @@ const Duels = () => {
           </Card>
         )}
 
-        {/* Active Duels Feed */}
-        <div className="space-y-4">
-          <h3 className="font-cinzel text-sm text-primary">⚔️ Feed de Duelos</h3>
+        {/* Tabs + Search for Feed */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setFeedTab("ativos")}
+              className={cn(
+                "flex-1 py-2 text-sm font-cinzel rounded-lg transition-colors text-center",
+                feedTab === "ativos"
+                  ? "bg-primary/20 text-primary border border-primary/40"
+                  : "bg-muted/50 text-muted-foreground border border-border"
+              )}
+            >
+              🟢 Ativos ({duelosAtivos.length})
+            </button>
+            <button
+              onClick={() => setFeedTab("finalizados")}
+              className={cn(
+                "flex-1 py-2 text-sm font-cinzel rounded-lg transition-colors text-center",
+                feedTab === "finalizados"
+                  ? "bg-destructive/20 text-destructive border border-destructive/40"
+                  : "bg-muted/50 text-muted-foreground border border-border"
+              )}
+            >
+              🔴 Finalizados ({duelosFinalizados.length})
+            </button>
+          </div>
 
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome..."
+              value={feedSearch}
+              onChange={(e) => setFeedSearch(e.target.value)}
+              className="pl-9 bg-input border-border"
+            />
+          </div>
+        </div>
+
+        {/* Duels Feed */}
+        <div className="space-y-4">
           {isLoading ? (
             [...Array(3)].map((_, i) => <Skeleton key={i} className="h-40 rounded-xl" />)
-          ) : duels.filter(d => d.status !== "pending").length === 0 ? (
+          ) : displayedDuels.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              Nenhum duelo ainda. Seja o primeiro a desafiar! ⚔️
+              {feedTab === "ativos"
+                ? "Nenhum duelo ativo. Seja o primeiro a desafiar! ⚔️"
+                : "Nenhum duelo finalizado ainda."}
             </div>
           ) : (
-            duels.filter(d => d.status !== "pending").map((duel) => (
+            displayedDuels.map((duel) => (
               <Card key={duel.id} className="bg-card/80 border-border overflow-hidden">
                 <CardContent className="py-4 space-y-3">
                   {/* Status + stake + timer */}
@@ -297,7 +378,7 @@ const Duels = () => {
                     </div>
                   </div>
 
-                  {/* VS Layout with clickable avatars */}
+                  {/* VS Layout */}
                   <div className="flex items-center justify-around">
                     <button
                       className="flex flex-col items-center gap-1.5 hover:opacity-80 transition-opacity"
