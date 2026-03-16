@@ -142,6 +142,8 @@ export function useCreatePost() {
           video_url: videoUrl || null,
           music_url: musicUrl || null,
           ...(categoria ? { categoria } : {}),
+          ...(raio !== undefined ? { raio } : {}),
+          ...(coroinha !== undefined ? { coroinha } : {}),
         } as any)
         .select()
         .single();
