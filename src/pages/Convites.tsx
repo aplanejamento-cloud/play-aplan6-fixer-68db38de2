@@ -60,18 +60,22 @@ const Convites = () => {
 
   const hasPosted = postsCount >= 1;
 
+  const [instagramModal, setInstagramModal] = useState(false);
+  const [instagramText, setInstagramText] = useState("");
+
   const buildShareUrl = (trackingUrl: string, networkId: string) => {
     const text = `Você não vai acreditar, lançaram uma Rede Social dos Famosos chamada Playlike, onde as pessoas publicam fotos e vídeos em troca de likes e estes likes podem ser trocados por prêmios cadastrados na página.\n\nE ainda vão eleger o melhor influenciador do Brasil.\n\nEu já me cadastrei e estou esperando a Rede Iniciar.\n\nSó pode se cadastrar agora quem recebe convite, porque o jogo ainda não iniciou e a rede está fechada para convidados.\n\nTe mandei o link abaixo para você conseguir se cadastrar também e aguardar o jogo começar\n\n🔥 Convide Playlike app! Cadastre-se grátis: ${trackingUrl}`;
     const encodedText = encodeURIComponent(text);
     const encodedUrl = encodeURIComponent(trackingUrl);
     const shortText = encodeURIComponent(`🔥 Convide Playlike app! Cadastre-se grátis: ${trackingUrl}`);
+    const fbText = encodeURIComponent(`Você não vai acreditar, lançaram uma Rede Social dos Famosos chamada Playlike! Eu já me cadastrei. Cadastre-se grátis: ${trackingUrl}`);
 
     const urls: Record<string, string> = {
       whatsapp: `https://wa.me/?text=${encodedText}`,
       "whatsapp-status": `https://wa.me/?text=${encodedText}`,
       telegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`,
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`,
-      instagram: `https://www.instagram.com/`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${fbText}`,
+      instagram: "__instagram__",
       twitter: `https://twitter.com/intent/tweet?text=${shortText}`,
       threads: `https://www.threads.net/intent/post?text=${shortText}`,
       bluesky: `https://bsky.app/intent/compose?text=${shortText}`,
