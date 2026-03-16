@@ -36,6 +36,7 @@ import AdminAnalytics from "./pages/AdminAnalytics";
 import Eliminados from "./pages/Eliminados";
 import SosAjuda from "./pages/SosAjuda";
 import AuthCallback from "./pages/AuthCallback";
+import EmailVerificationGate from "@/components/EmailVerificationGate";
 import Temas from "./pages/Temas";
 import SetupTest from "./pages/SetupTest";
 import Ebooks from "./pages/Ebooks";

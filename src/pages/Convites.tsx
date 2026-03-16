@@ -118,6 +118,13 @@ const Convites = () => {
       if (networkId === "copiar-link" || networkId === "qrcode") {
         await navigator.clipboard.writeText(trackingUrl);
         toast({ title: "Link rastreado copiado! 📋", description: "Likes serão creditados quando alguém clicar." });
+      } else if (networkId === "instagram") {
+        // Instagram doesn't support direct sharing - show copy modal
+        const igText = `🔥 Convide Playlike app! Cadastre-se grátis:\n${trackingUrl}`;
+        setInstagramText(igText);
+        setInstagramModal(true);
+        try { await navigator.clipboard.writeText(igText); } catch {}
+        toast({ title: "📋 Texto copiado!", description: "Cole no Instagram e compartilhe!" });
       } else {
         const shareUrl = buildShareUrl(trackingUrl, networkId);
         if (shareUrl) {
