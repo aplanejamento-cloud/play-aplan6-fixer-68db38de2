@@ -60,18 +60,22 @@ const Convites = () => {
 
   const hasPosted = postsCount >= 1;
 
+  const [instagramModal, setInstagramModal] = useState(false);
+  const [instagramText, setInstagramText] = useState("");
+
   const buildShareUrl = (trackingUrl: string, networkId: string) => {
     const text = `Você não vai acreditar, lançaram uma Rede Social dos Famosos chamada Playlike, onde as pessoas publicam fotos e vídeos em troca de likes e estes likes podem ser trocados por prêmios cadastrados na página.\n\nE ainda vão eleger o melhor influenciador do Brasil.\n\nEu já me cadastrei e estou esperando a Rede Iniciar.\n\nSó pode se cadastrar agora quem recebe convite, porque o jogo ainda não iniciou e a rede está fechada para convidados.\n\nTe mandei o link abaixo para você conseguir se cadastrar também e aguardar o jogo começar\n\n🔥 Convide Playlike app! Cadastre-se grátis: ${trackingUrl}`;
     const encodedText = encodeURIComponent(text);
     const encodedUrl = encodeURIComponent(trackingUrl);
     const shortText = encodeURIComponent(`🔥 Convide Playlike app! Cadastre-se grátis: ${trackingUrl}`);
+    const fbText = encodeURIComponent(`Você não vai acreditar, lançaram uma Rede Social dos Famosos chamada Playlike! Eu já me cadastrei. Cadastre-se grátis: ${trackingUrl}`);
 
     const urls: Record<string, string> = {
       whatsapp: `https://wa.me/?text=${encodedText}`,
       "whatsapp-status": `https://wa.me/?text=${encodedText}`,
       telegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`,
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`,
-      instagram: `https://www.instagram.com/`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${fbText}`,
+      instagram: "__instagram__",
       twitter: `https://twitter.com/intent/tweet?text=${shortText}`,
       threads: `https://www.threads.net/intent/post?text=${shortText}`,
       bluesky: `https://bsky.app/intent/compose?text=${shortText}`,
@@ -114,6 +118,13 @@ const Convites = () => {
       if (networkId === "copiar-link" || networkId === "qrcode") {
         await navigator.clipboard.writeText(trackingUrl);
         toast({ title: "Link rastreado copiado! 📋", description: "Likes serão creditados quando alguém clicar." });
+      } else if (networkId === "instagram") {
+        // Instagram doesn't support direct sharing - show copy modal
+        const igText = `🔥 Convide Playlike app! Cadastre-se grátis:\n${trackingUrl}`;
+        setInstagramText(igText);
+        setInstagramModal(true);
+        try { await navigator.clipboard.writeText(igText); } catch {}
+        toast({ title: "📋 Texto copiado!", description: "Cole no Instagram e compartilhe!" });
       } else {
         const shareUrl = buildShareUrl(trackingUrl, networkId);
         if (shareUrl) {
@@ -234,6 +245,42 @@ const Convites = () => {
             Ir para Playlike
           </Button>
         </div>
+
+        {/* Instagram Copy Modal */}
+        {instagramModal && (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setInstagramModal(false)}>
+            <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
+              <h3 className="font-cinzel text-lg text-primary text-center">📸 Compartilhar no Instagram</h3>
+              <p className="text-xs text-muted-foreground text-center">O texto já foi copiado! Cole na legenda ou stories do Instagram.</p>
+              <textarea
+                readOnly
+                value={instagramText}
+                className="w-full h-24 bg-muted border border-border rounded-lg p-3 text-xs text-foreground resize-none"
+              />
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    navigator.clipboard.writeText(instagramText);
+                    toast({ title: "📋 Copiado!" });
+                  }}
+                  variant="outline"
+                  className="flex-1 border-border text-foreground"
+                >
+                  Copiar
+                </Button>
+                <Button
+                  onClick={() => {
+                    window.open("https://www.instagram.com/", "_blank");
+                    setInstagramModal(false);
+                  }}
+                  className="flex-1 bg-primary text-primary-foreground"
+                >
+                  Abrir Instagram
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

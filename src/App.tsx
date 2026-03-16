@@ -36,6 +36,7 @@ import AdminAnalytics from "./pages/AdminAnalytics";
 import Eliminados from "./pages/Eliminados";
 import SosAjuda from "./pages/SosAjuda";
 import AuthCallback from "./pages/AuthCallback";
+import EmailVerificationGate from "@/components/EmailVerificationGate";
 import Temas from "./pages/Temas";
 import SetupTest from "./pages/SetupTest";
 import Ebooks from "./pages/Ebooks";
@@ -65,6 +66,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!user) return <Navigate to="/" replace />;
 
+  // Block unverified email users
+  const isVerified = user.email_confirmed_at || user.confirmed_at;
+  if (!isVerified) {
+    return <EmailVerificationGate>{children}</EmailVerificationGate>;
+  }
+
   if (gameState && !gameState.game_on) {
     return <Navigate to="/profile" replace />;
   }
@@ -82,6 +89,13 @@ const AuthProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
   if (!user) return <Navigate to="/" replace />;
+
+  // Block unverified email users
+  const isVerified = user.email_confirmed_at || user.confirmed_at;
+  if (!isVerified) {
+    return <EmailVerificationGate>{children}</EmailVerificationGate>;
+  }
+
   return <>{children}</>;
 };
 

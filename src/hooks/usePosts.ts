@@ -133,6 +133,23 @@ export function useCreatePost() {
         if (count >= 3) throw new Error("Limite de 3 posts/dia atingido!");
       }
 
+      // Check if user has an active tema multiplicador
+      let postMultiplicador: number | null = null;
+      let postTemaId: string | null = null;
+      if (profile?.multiplicador_ativo && profile.multiplicador_ativo > 1) {
+        const isExpired = profile.multiplicador_end && new Date(profile.multiplicador_end) < new Date();
+        if (!isExpired) {
+          postMultiplicador = profile.multiplicador_ativo;
+          // Fetch tema_id from profile
+          const { data: pData } = await supabase
+            .from("profiles")
+            .select("tema_id")
+            .eq("user_id", user.id)
+            .single();
+          postTemaId = (pData as any)?.tema_id || null;
+        }
+      }
+
       const { data, error } = await supabase
         .from("posts")
         .insert({
@@ -144,6 +161,7 @@ export function useCreatePost() {
           ...(categoria ? { categoria } : {}),
           ...(raio !== undefined ? { raio } : {}),
           ...(coroinha !== undefined ? { coroinha } : {}),
+          ...(postTemaId ? { tema_id: postTemaId, multiplicador: postMultiplicador } : {}),
         } as any)
         .select()
         .single();
