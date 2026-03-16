@@ -65,6 +65,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!user) return <Navigate to="/" replace />;
 
+  // Block unverified email users
+  const isVerified = user.email_confirmed_at || user.confirmed_at;
+  if (!isVerified) {
+    return <EmailVerificationGate>{children}</EmailVerificationGate>;
+  }
+
   if (gameState && !gameState.game_on) {
     return <Navigate to="/profile" replace />;
   }
@@ -82,6 +88,13 @@ const AuthProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
   if (!user) return <Navigate to="/" replace />;
+
+  // Block unverified email users
+  const isVerified = user.email_confirmed_at || user.confirmed_at;
+  if (!isVerified) {
+    return <EmailVerificationGate>{children}</EmailVerificationGate>;
+  }
+
   return <>{children}</>;
 };
 
