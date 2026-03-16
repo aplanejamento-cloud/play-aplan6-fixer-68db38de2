@@ -139,12 +139,22 @@ export function useDuels() {
   };
 
   const acceptDuel = async (duelId: string) => {
+    const duel = duels.find(d => d.id === duelId) || pendingDuels.find(d => d.id === duelId);
     const { error } = await supabase
       .from("duels")
       .update({ status: "active" } as any)
       .eq("id", duelId);
 
     if (!error) {
+      // Notify challenger that duel was accepted
+      if (duel && user) {
+        await supabase.from("notifications").insert({
+          user_id: duel.challenger_id,
+          tipo: "duelo",
+          from_user_id: user.id,
+          mensagem: "⚔️ Seu duelo foi ACEITO! A batalha começou AO VIVO!",
+        });
+      }
       toast.success("Duelo aceito! 7 dias de batalha começam agora! ⚔️");
       fetchDuels();
       fetchPending();
