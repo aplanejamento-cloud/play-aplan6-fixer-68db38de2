@@ -91,7 +91,7 @@ const ChallengeProofModal = ({ open, onOpenChange, desafioTexto, desafioId }: Ch
         coroinha: true,
       });
 
-      toast.success("Prova do desafio publicada! 🏆");
+      toast.success("Prova do desafio publicada nos feeds Raio + Coroínha! 🏆");
       reset();
       onOpenChange(false);
     } catch (error) {
