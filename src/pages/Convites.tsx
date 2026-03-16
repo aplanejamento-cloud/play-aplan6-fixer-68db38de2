@@ -245,6 +245,42 @@ const Convites = () => {
             Ir para Playlike
           </Button>
         </div>
+
+        {/* Instagram Copy Modal */}
+        {instagramModal && (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setInstagramModal(false)}>
+            <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
+              <h3 className="font-cinzel text-lg text-primary text-center">📸 Compartilhar no Instagram</h3>
+              <p className="text-xs text-muted-foreground text-center">O texto já foi copiado! Cole na legenda ou stories do Instagram.</p>
+              <textarea
+                readOnly
+                value={instagramText}
+                className="w-full h-24 bg-muted border border-border rounded-lg p-3 text-xs text-foreground resize-none"
+              />
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    navigator.clipboard.writeText(instagramText);
+                    toast({ title: "📋 Copiado!" });
+                  }}
+                  variant="outline"
+                  className="flex-1 border-border text-foreground"
+                >
+                  Copiar
+                </Button>
+                <Button
+                  onClick={() => {
+                    window.open("https://www.instagram.com/", "_blank");
+                    setInstagramModal(false);
+                  }}
+                  className="flex-1 bg-primary text-primary-foreground"
+                >
+                  Abrir Instagram
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
