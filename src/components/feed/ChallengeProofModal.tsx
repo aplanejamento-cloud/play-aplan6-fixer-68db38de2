@@ -87,6 +87,8 @@ const ChallengeProofModal = ({ open, onOpenChange, desafioTexto, desafioId }: Ch
         videoUrl,
         additionalImages,
         categoria: "desafio-prova",
+        raio: true,
+        coroinha: true,
       });
 
       toast.success("Prova do desafio publicada! 🏆");
